@@ -1,3 +1,7 @@
+# Novas adições 
+CONFIG_ZRAM_MULTI_COMP=y
+CONFIG_ZRAM_RECOMPRESS=y
+
 # No CPU mitigations
 CONFIG_CPU_MITIGATIONS=n
 
