@@ -50,6 +50,7 @@ source=(
   "$_srcname::git+https://github.com/evlaV/linux-integration.git#tag=$_tag"
   config          # Upstream Arch Linux kernel configuration file, DO NOT EDIT!!!
   config-neptune  # Jupiter: the neptune kernel fragment file (overrides 'config' above)
+  config-charcoal # Charcoal: The Charcoal kernel fragment file
   charcoal.conf
   65-adios.rules
   99-charcoal.sh
@@ -90,11 +91,11 @@ source=(
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
   re-swappiness-v1.2_backported.patch
-  config-charcoal # Charcoal: The Charcoal kernel fragment file
-)
+) 
 sha256sums=('c5bf5f0ab7b0ed0ede6669502afd6b45ef53dc8ca33f07c3439f8fa943c878ec'
             '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
-            '8fec943cf08cb8988da28b4829a4b192a71aef2887df48004ebb80f6e9597020' 
+            '8fec943cf08cb8988da28b4829a4b192a71aef2887df48004ebb80f6e9597020'
+            'SKIP' 
             'b831de1b98a2f77f636f4780e37ebfcb3a6829f94f5423eb04c4b26e64ac43b8'
             '52cbbf41450806d766260bc4f1ea055f6f9fdd55d37ad831840b16d505beb0cc'
             '0a6a7408ccc0c94b5cce50dabc7ee318abcc1b9eaaedd3d83fd7e7d5a73b4d4f'
@@ -133,8 +134,7 @@ sha256sums=('c5bf5f0ab7b0ed0ede6669502afd6b45ef53dc8ca33f07c3439f8fa943c878ec'
             '26aed703ca1a74aa33bd76e632a63810840f7549849435c2a8e893985ff6e2c9'
             '7ba61ccf2ddb508d6adb30906d3d57dc0ce1bc64a6d1a41796eb94a8584ea63b'
             '1055bbbd32985017f4501d375648873bd598db084177d302aeeade56b47920e1'
-            '296653a6a218abe7ccef7bdfa682d402b0d01525dbf7955f42f32b48615d9b1f'
-            'SKIP'
+            '296653a6a218abe7ccef7bdfa682d402b0d01525dbf7955f42f32b48615d9b1f' 
             'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
