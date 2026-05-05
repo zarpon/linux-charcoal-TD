@@ -7,7 +7,7 @@ Subject: [PATCH] linux7.1-rc1-zram-ir-1.2
  drivers/block/zram/zram_drv.c | 90 ++++++++++++++++++++++++++++-------
  1 file changed, 72 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
+diff --git archlinux-linux-charcoal/a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
 index aebc710f0d..f8f85be1a9 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
