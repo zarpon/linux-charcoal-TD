@@ -85,7 +85,7 @@ source=(
   "git+https://github.com/dlundqvist/xone.git#tag=v0.5.8"
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
-   0001-linux7.1-rc1-zram-ir-1.2.patch
+   0001-linux6.16.0-zram-ir-1.2.patch
    re-swappiness-v1.2_backported.patch
  ) 
 sha256sums=(
