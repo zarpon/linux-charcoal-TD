@@ -86,8 +86,7 @@ source=(
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
    6.18-kcompressd-unofficial-0.5.patch
-   6.18.13-Re-swappiness-v1.2.patch
-   linux6.18--zram-ir-1.2.patch 
+   6.18.13-Re-swappiness-v1.2.patch 
  ) 
 sha256sums=(
   'SKIP'
@@ -124,7 +123,6 @@ sha256sums=(
   'ad78cbbb686baf426f83368db3f7bd4e86051d373652868208e8ba5d18ce68dc'
   '8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
   '281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
-  'SKIP'
   'SKIP'
   'SKIP'
   'SKIP'
