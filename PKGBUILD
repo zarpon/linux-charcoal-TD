@@ -59,7 +59,6 @@ source=(
   drm_sched_rr_default.patch
   ryzen_smu.diff
   xpad-noone.diff
-  "c23.patch::https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=d70f79fef65810faf64dbae1f3a1b5623cdb2345"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.16/0002-clear-patches.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.11/0007-v6.11-fsync1_via_futex_waitv.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.16/0013-optimize_harder_O3.patch"
@@ -105,7 +104,6 @@ sha256sums=('SKIP'
             '6e510d8b74798944b5cb84ac775156831410c853c8a03c2a3f79e9bc7be9c2e2'
             '4bcf61814a6daac8f72c46a425b9ce88c07f6bd95f6a0ac287d73dfd4d5da60b'
             'ff3bbe78d6f072d57f567878e870956242ee78ccddd258b1ec2e4729621138fe'
-            'ab6b17b1f9cc4b322f0050d2e8cede75e44e069854e9bdc22068356530d628e8'
             '11fe52062dedc9c2016fafc98899f4afb4cbd5327bd985c8d813dc72461f503a'
             '9df628fd530950e37d31da854cb314d536f33c83935adf5c47e71266a55f7004'
             '9e7b20068cdfe6a00b64d7488bdc47966fa130a07a3eae02fa57caef5d35d4ec'
