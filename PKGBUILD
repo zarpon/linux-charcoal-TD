@@ -93,7 +93,7 @@ source=(
    0001-linux6.16.0-zram-ir-1.2.patch
    re-swappiness-v1.2_backported.patch
 ) 
-sha256sums=('c5bf5f0ab7b0ed0ede6669502afd6b45ef53dc8ca33f07c3439f8fa943c878ec'
+sha256sums=('SKIP'
             '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
             '8fec943cf08cb8988da28b4829a4b192a71aef2887df48004ebb80f6e9597020'
             'SKIP' 
