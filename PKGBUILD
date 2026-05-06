@@ -81,7 +81,6 @@ source=(
   "https://github.com/zen-kernel/zen-kernel/commit/21dd0495958b7c1bd34f2d83537a4f3af5b804c3.patch"
   "https://github.com/zen-kernel/zen-kernel/commit/b418708702f7927a7922b90871ab1cdf1df9bb94.patch"
   "https://github.com/zen-kernel/zen-kernel/commit/92850f57d0d3dd0c55a6556f4c4a9afd38da7f8a.patch"
-  "https://github.com/zen-kernel/zen-kernel/commit/e3afdec765f5277bbd3b2196e0facb8b428fb9d2.patch"
   "git+https://github.com/amkillam/ryzen_smu.git#commit=9f9569f889935f7c7294cc32c1467e5a4081701a"
   "git+https://github.com/dlundqvist/xone.git#tag=v0.5.8"
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
@@ -124,7 +123,6 @@ sha256sums=(
   'ad78cbbb686baf426f83368db3f7bd4e86051d373652868208e8ba5d18ce68dc'
   '8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
   '281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
-  '4efdfcea27b787f0c6d5fc46fb652b2bba7c994a3ab9a681184bca4fd10a234f'
   'SKIP'
   'SKIP'
   'SKIP'
