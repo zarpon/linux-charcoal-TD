@@ -85,6 +85,12 @@ source=(
   "git+https://github.com/dlundqvist/xone.git#tag=v0.5.8"
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
+   "https://gitlab.freedesktop.org/pixelcluster/kernel/-/commit/9d928b2c5af078304205c12c71fec4904860d8cc.patch" 
+   "https://gitlab.freedesktop.org/pixelcluster/kernel/-/commit/9a02490c9f7938a4ed8950f0d61bcf677f67c07b.patch" 
+   "https://gitlab.freedesktop.org/pixelcluster/kernel/-/commit/1f24ddd4ffd04f47a04bd84987f36dc545bc7421.patch" 
+   "https://gitlab.freedesktop.org/pixelcluster/kernel/-/commit/f6bde8345b0c66e9cd81fa368343d4438ac9b3b0.patch" 
+   "https://gitlab.freedesktop.org/pixelcluster/kernel/-/commit/68f051af747220ac7d1d74bec8d79f2cb3a58304.patch" 
+   "https://gitlab.freedesktop.org/pixelcluster/kernel/-/commit/9260440455cd61f2c90cca172bc9d3e83bf1206d.patch" 
    6.18-kcompressd-unofficial-0.5.patch
    6.18.13-Re-swappiness-v1.2.patch 
  ) 
@@ -123,6 +129,12 @@ sha256sums=(
   'ad78cbbb686baf426f83368db3f7bd4e86051d373652868208e8ba5d18ce68dc'
   '8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
   '281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
   'SKIP'
   'SKIP'
   'SKIP'
