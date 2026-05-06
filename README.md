@@ -27,7 +27,8 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - Add [xone](https://github.com/dlundqvist/xone), [xpad-noone](https://github.com/forkymcforkface/xpad-noone) and [xpadneo](https://github.com/atar-axis/xpadneo)
 Adicionados patch re-swappiness
 (https://github.com/firelzrd/re-swappiness)
-Adicionadao Kcompressd-unofficial 
+
+Adicionado Kcompressd-unofficial 
 (https://github.com/firelzrd/kcompressd-unofficial)
 
 # Install
