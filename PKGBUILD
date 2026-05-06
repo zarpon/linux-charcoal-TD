@@ -2,10 +2,10 @@
 # Maintainer: John Schoenick <johns@valvesoftware.com>
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
-pkgbase=linux-charcoal-616
-_nepbase=linux-neptune-616
-_tag=6.16.12-valve17
-_ver=2
+pkgbase=linux-charcoal-618
+_nepbase=linux-neptune-618
+_tag=6.18.12-valve17
+_ver=1
 pkgver=${_tag//-/.}.cc$_ver
 pkgrel=1
 pkgdesc='Linux'
