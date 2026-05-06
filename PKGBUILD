@@ -45,7 +45,7 @@ options=(
   !strip
 )
 _srcname=archlinux-linux-charcoal
-_xpadneo_version=0.10.1
+_xpadneo_version=0.10.2
 source=(
   "$_srcname::git+https://github.com/evlaV/linux-integration.git#tag=$_tag"
   config          # Upstream Arch Linux kernel configuration file, DO NOT EDIT!!!
@@ -59,14 +59,14 @@ source=(
   drm_sched_rr_default.patch
   ryzen_smu.diff
   xpad-noone.diff
-  "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.16/0002-clear-patches.patch"
+  "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0002-clear-patches.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.11/0007-v6.11-fsync1_via_futex_waitv.patch"
-  "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.16/0013-optimize_harder_O3.patch"
-  "https://dev.gentoo.org/~alicef/genpatches/trunk/6.16/2000_BT-Check-key-sizes-only-if-Secure-Simple-Pairing-enabled.patch"
-  "https://dev.gentoo.org/~alicef/genpatches/trunk/6.16/2990_libbpf-v2-workaround-Wmaybe-uninitialized-false-pos.patch"
-  "https://dev.gentoo.org/~alicef/genpatches/trunk/6.16/5010_enable-cpu-optimizations-universal.patch"
-  "https://raw.githubusercontent.com/CachyOS/kernel-patches/refs/heads/master/6.16/misc/dkms-clang.patch"
-  "https://raw.githubusercontent.com/CachyOS/kernel-patches/refs/heads/master/6.16/misc/0001-clang-polly.patch"
+  "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0013-optimize_harder_O3.patch"
+  "https://dev.gentoo.org/~alicef/genpatches/trunk/6.18/2000_BT-Check-key-sizes-only-if-Secure-Simple-Pairing-enabled.patch"
+  "https://dev.gentoo.org/~alicef/genpatches/trunk/6.18/2990_libbpf-v2-workaround-Wmaybe-uninitialized-false-pos.patch"
+  "https://dev.gentoo.org/~alicef/genpatches/trunk/6.18/5010_enable-cpu-optimizations-universal.patch"
+  "https://raw.githubusercontent.com/CachyOS/kernel-patches/refs/heads/master/6.18/misc/dkms-clang.patch"
+  "https://raw.githubusercontent.com/CachyOS/kernel-patches/refs/heads/master/6.18/misc/0001-clang-polly.patch"
   "0001-always-print-firmware-file-name.patch::https://732852.bugs.gentoo.org/attachment.cgi?id=649432"
   "302-mac80211-minstrel_ht-fix-MINSTREL_FRAC-macro.patch::https://git.openwrt.org/openwrt/openwrt/plain/package/kernel/mac80211/patches/subsys/302-mac80211-minstrel_ht-fix-MINSTREL_FRAC-macro.patch?id=0ff1553bd731c0db28043fc9caab90bdc32587f3"
   "303-mac80211-minstrel_ht-reduce-fluctuations-in-rate-pro.patch::https://git.openwrt.org/openwrt/openwrt/plain/package/kernel/mac80211/patches/subsys/303-mac80211-minstrel_ht-reduce-fluctuations-in-rate-pro.patch?id=0ff1553bd731c0db28043fc9caab90bdc32587f3"
@@ -104,9 +104,9 @@ sha256sums=('SKIP'
             '6e510d8b74798944b5cb84ac775156831410c853c8a03c2a3f79e9bc7be9c2e2'
             '4bcf61814a6daac8f72c46a425b9ce88c07f6bd95f6a0ac287d73dfd4d5da60b'
             'ff3bbe78d6f072d57f567878e870956242ee78ccddd258b1ec2e4729621138fe'
-            '11fe52062dedc9c2016fafc98899f4afb4cbd5327bd985c8d813dc72461f503a'
+            '2c9843a51e8dd4b41f7620dcc4bf3677c7867d922073202c095324fb1443cfa5'
             '9df628fd530950e37d31da854cb314d536f33c83935adf5c47e71266a55f7004'
-            '9e7b20068cdfe6a00b64d7488bdc47966fa130a07a3eae02fa57caef5d35d4ec'
+            'aef091d764111c350f1c8e1c55787203a0c88b643d0cf2da53931a58fecc9d5b'
             '882156f8dfb21b5b1a85e9aaa48280540b4d1348f1bde0c358b47678aea9065a'
             'a08fa9d2e7a943399fec7fb08eead6308bb51642c4592a9f57d1b79b06d5495c'
             'ed36bcab65f959200c91991e3337fd716883ef0915fbec65d6252f09fd72c666'
@@ -118,7 +118,7 @@ sha256sums=('SKIP'
             '4929f7a8033f34715c2a19b606c45d0d711e7328452ed1b31a5bf52a0c1a7232'
             'e261cfdf1d03f741ba111c812f3c1d0be2bf2d58e68efe2477a5bd542cd85f2e'
             '49931b2d29f2501bb7d11f0f0cc978d98c90b5556e9ecfe11ca82672445d4cbf'
-            '74db38cd3c353c295d2bd11159ccafc4396b8fb21735a536f5bb5ab71093a90f'
+            'd3ef4f585e806768477ec6ddadbec99b26c0b8f926826bad16ef9b0feaca4601'
             'bd510cae8138460ea4d9356ff93ee06a4a703077365f3816a24709402e790470'
             '5ef2f14326a5fab8980d1ebb6734ece576f930c173b4980eb026513aa3b1b9d0'
             '99a66ba41a7c40746f770b28430598c655f42e09e1ce196b1f28c9f4d89f247c'
@@ -130,10 +130,10 @@ sha256sums=('SKIP'
             '8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
             '281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
             '4efdfcea27b787f0c6d5fc46fb652b2bba7c994a3ab9a681184bca4fd10a234f'
-            '26aed703ca1a74aa33bd76e632a63810840f7549849435c2a8e893985ff6e2c9'
-            '7ba61ccf2ddb508d6adb30906d3d57dc0ce1bc64a6d1a41796eb94a8584ea63b'
-            '1055bbbd32985017f4501d375648873bd598db084177d302aeeade56b47920e1'
-            '296653a6a218abe7ccef7bdfa682d402b0d01525dbf7955f42f32b48615d9b1f' 
+            'fa1468514e71f522160a223251d4185109df13aaf9bb0e204b5c4db9ba7435bb'
+            '439dac3cf1a08ccbc7ce6449d941ac6f380e3e1892985468d8e1c18524bba0b3'
+            '3571c8e0aac9a209681d2afcaf77ae1a318905eabc69fe78e2d9c72d94ea131d'
+            '8573612164bd3be6734bfc0fb285863155f685622019c68fe5cb3290d4bd1f21'
             'SKIP'
             'SKIP')
 
