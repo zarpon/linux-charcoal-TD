@@ -86,7 +86,7 @@ source=(
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
    6.18-kcompressd-unofficial-0.5.patch
-   re-swappiness-v1.2_backported.patch
+   6.18.13-Re-swappiness-v1.2.patch
  ) 
 sha256sums=(
   'SKIP'
