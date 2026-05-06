@@ -8,7 +8,6 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - Change maximum allowed CPU frequency on Steam Deck from 3.5 to 4.2 GHz (as requested on Discord)
 - Change maximum PPT limit on Steam Deck from 30 to 50 watt (as requested at #5)
 - Add wait on multiple futexes opcode for fsync (from tkg)
-- Add [BORE](https://github.com/firelzrd/bore-scheduler)
 - Add [ADIOS](https://github.com/firelzrd/adios)
 - Switch default DRM scheduling policy to round-robin
 - Optimize kernel with -O3 (from tkg)
@@ -26,13 +25,13 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - Fix dkms with LLVM clang (from CachyOS)
 - Add [ryzen_smu](https://github.com/amkillam/ryzen_smu)
 - Add [xone](https://github.com/dlundqvist/xone), [xpad-noone](https://github.com/forkymcforkface/xpad-noone) and [xpadneo](https://github.com/atar-axis/xpadneo)
-- ~~Add NTSYNC (from CachyOS)~~ Valve added it to 6.11.11-valve27
-- ~~Add Binder module (for Waydroid)~~ Arch Linux enabled it with 6.12.7
-- ~~Switch sheduling frequency to 1000 Hz~~ Arch Linux changed it with 6.13.1
-- ~~Update zstd (from CachyOS)~~ No longer needed for modern kernels
+Adicionados patch re-swappiness
+(https://github.com/firelzrd/re-swappiness)
+Adicionadao Kcompressd-unofficial 
+(https://github.com/firelzrd/kcompressd-unofficial)
 
 # Install
-Download the [latest release](https://github.com/V10lator/linux-charcoal/releases/latest) and run the following on your Steam Deck:
+
 ```
 cd ~/Downloads
 sudo steamos-readonly disable
