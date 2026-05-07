@@ -78,7 +78,7 @@ index aebc710f0d..f8f85be1a9 100644
  
  	mem = kmap_local_page(page);
  	same_filled = page_same_filled(mem, &element);
-@@ -2274,50 +2297,68 @@ static int zram_write_page(struct zram *zram, struct page *page, u32 index)
+@@ -2274,49 +2297,68 @@ static int zram_write_page(struct zram *zram, struct page *page, u32 index)
  	if (same_filled)
  		return write_same_filled_page(zram, element, index);
  
