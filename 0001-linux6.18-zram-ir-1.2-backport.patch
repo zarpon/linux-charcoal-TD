@@ -166,7 +166,7 @@ index aebc710f0d..f8f85be1a9 100644
 +		zcomp_stream_put(zstrm);
  	return ret;
  }
-@@ -3269,6 +3310,18 @@ static int __init zram_init(void)
+@@ -3269,6 +3310,13 @@ static int __init zram_init(void)
  		num_devices--;
  	}
  
@@ -180,7 +180,7 @@ index aebc710f0d..f8f85be1a9 100644
  	return 0;
  
  out_error:
-@@ -3278,6 +3331,10 @@ static int __init zram_init(void)
+@@ -3278,6 +3331,11 @@ static int __init zram_init(void)
  
  static void __exit zram_exit(void)
  {
