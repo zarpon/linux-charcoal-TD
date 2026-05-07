@@ -1,4 +1,4 @@
-# Charcoal SteamOS Kernel
+# Charcoal SteamOS Kernel turbo Decky edition from. 
 [![build](https://github.com/V10lator/linux-charcoal/actions/workflows/push.yml/badge.svg)](https://github.com/V10lator/linux-charcoal/actions)
 
 Works on Steam Deck and possibly other AMD based handheld PCs.
@@ -27,7 +27,6 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - Add [xone](https://github.com/dlundqvist/xone), [xpad-noone](https://github.com/forkymcforkface/xpad-noone) and [xpadneo](https://github.com/atar-axis/xpadneo)
 Adicionados patch re-swappiness
 (https://github.com/firelzrd/re-swappiness)
-
 Adicionado Kcompressd-unofficial 
 (https://github.com/firelzrd/kcompressd-unofficial)
 
