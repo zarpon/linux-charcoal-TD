@@ -52,7 +52,6 @@ source=(
   config-neptune  # Jupiter: the neptune kernel fragment file (overrides 'config' above)
   config-charcoal # Charcoal: The Charcoal kernel fragment file
   charcoal.conf
-  0001-linux6.18-zram-ir-1.2-backport.patch
   65-adios.rules
   99-charcoal.sh
   vangogh_allow_higher_cpu_freq.patch
@@ -88,9 +87,9 @@ source=(
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
    6.18-kcompressd-unofficial-0.5.patch
    6.18.13-Re-swappiness-v1.2.patch 
+   0001-linux6.18-zram-ir-1.2-backport.patch
    ) 
 sha256sums=(
-  'SKIP'
   'SKIP'
   'SKIP'
   'SKIP'
@@ -125,6 +124,7 @@ sha256sums=(
   'ad78cbbb686baf426f83368db3f7bd4e86051d373652868208e8ba5d18ce68dc'
   '8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
   '281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
+  'SKIP'
   'SKIP'
   'SKIP'
   'SKIP'
