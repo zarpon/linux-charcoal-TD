@@ -123,12 +123,6 @@ sha256sums=(
   'SKIP'
   'SKIP'
   'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
 )
 
 export KBUILD_BUILD_HOST=archlinux
