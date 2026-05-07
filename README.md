@@ -10,6 +10,9 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - Add wait on multiple futexes opcode for fsync (from tkg)
 - Add [BORE](https://github.com/firelzrd/bore-scheduler)
 - Add [ADIOS](https://github.com/firelzrd/adios)
+- Add [re-swappiness](https://github.com/firelzrd/re-swappiness)
+- Add [zram-ir](https://github.com/firelzrd/zram-ir)
+- Add [kcompressd-unofficial](https://github.com/firelzrd/kcompressd-unofficial)
 - Switch default DRM scheduling policy to round-robin
 - Optimize kernel with -O3 (from tkg)
 - Optimize for Zen 2 (from Gentoo)
