@@ -91,48 +91,48 @@ source=(
    linux6.18.22-bore-6.6.3.patch 
    ) 
 sha256sums=(
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-'121f0088df8576f3f03b2260662d98048259f9392e6249767222f251c6e6df6b' # 0002-clear-patches.patch
-'26715f5737156942945610899015197825368417242152341982753215263481' # 0007-v6.11-fsync1_via_futex_waitv.patch
-'564234568901234567890abcdef1234567890abcdef1234567890abcdef12345' # 0013-optimize_harder_O3.patch (Estimativa baseada na v6.18)
-'a23f4b5c6d7e8f901a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f901a2b3c4d5e' # 2990_libbpf-v2-workaround...
-'f7e6d5c4b3a2109876543210fedcba9876543210abcdef0123456789abcdef01' # 5010_enable-cpu-optimizations...
-'c0ffee1234567890abcdef1234567890abcdef1234567890abcdef123456789' # dkms-clang.patch
-'bada551234567890abcdef1234567890abcdef1234567890abcdef123456789' # 0001-clang-polly.patch
-'4a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f901a2b3c4d5e6f7a8b9c0d1e2f3a' # 0001-always-print-firmware...
-'d1e2f3a4b5c6d7e8f901a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f901a2b3c4' # 302-mac80211-minstrel_ht...
-'e2f3a4b5c6d7e8f901a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f901a2b3c4d5' # 303-mac80211-minstrel_ht...
-'f3a4b5c6d7e8f901a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f901a2b3c4d5e6' # 304-mac80211-minstrel_ht...
-'0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' # 910-ath11k-fix...
-'123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0' # 350-ath11k-Revert...
-'23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01' # 0001-linux6.18.3-ADIOS...
-'3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012' # 0002-Make-ADIOS...
-'f6ed65cd7bda9cb6009c6a12efd7c4311df31936e7890abcdef1234567890abc' # zen-kernel f6ed65c...
-'cab7ea1a4ef6685a133ae121ca27098b9dd31287e1234567890abcdef1234567' # zen-kernel cab7ea1...
-'fb5c79d96cc87e4778ac0f2a53bc7c0c23078c54abcdef1234567890abcdef12' # zen-kernel fb5c79d...
-'21dd0495958b7c1bd34f2d83537a4f3af5b804c3abcdef1234567890abcdef12' # zen-kernel 21dd049...
-'b418708702f7927a7922b90871ab1cdf1df9bb94abcdef1234567890abcdef12' # zen-kernel b418708...
-'92850f57d0d3dd0c55a6556f4c4a9afd38da7f8aabcdef1234567890abcdef12' # zen-kernel 92850f5...
-'SKIP' # git+https://github.com/amkillam/ryzen_smu.git (Git repos usam SKIP ou o hash do tarball)
-'SKIP' # git+https://github.com/dlundqvist/xone.git
-'SKIP' # git+https://github.com/forkymcforkface/xpad-noone.git
-'SKIP' # git+https://github.com/atar-axis/xpadneo.git
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
-  'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'bf2186776d96122136019b7b11aea1f0f46914bf107aa83c949e654290f7eed3'
+'78da5c2c011b2679f1309366c3964a919607db5fa1b76a3e426c5af67eded5a1'
+'4929f7a8033f34715c2a19b606c45d0d711e7328452ed1b31a5bf52a0c1a7232'
+'e261cfdf1d03f741ba111c812f3c1d0be2bf2d58e68efe2477a5bd542cd85f2e'
+'SKIP'
+'SKIP'
+'5ef2f14326a5fab8980d1ebb6734ece576f930c173b4980eb026513aa3b1b9d0'
+'bc647f73ec860a0fe7d074c2377588816a616dc2a651b30d7b9cd168863a17c6'
+'5059762e54c8dbe4262d48eafb8d486a54244eec71da5d7b61fc0f5f1c5c2ea7'
+'f22c6983d496d9038fa0f4288ee6cbb5b46837fee5f644f4759e4c26dcdff262'
+'ad78cbbb686baf426f83368db3f7bd4e86051d373652868208e8ba5d18ce68dc'
+'8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
+'281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
 )
 
 export KBUILD_BUILD_HOST=archlinux
