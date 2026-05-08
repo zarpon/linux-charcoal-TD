@@ -58,8 +58,7 @@ source=(
   vangogh_higher_max_power_limit.patch
   drm_sched_rr_default.patch
   ryzen_smu.diff
-  xpad-noone.diff
-  "c23.patch::https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=d70f79fef65810faf64dbae1f3a1b5623cdb2345" 
+  xpad-noone.diff 
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0002-clear-patches.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.11/0007-v6.11-fsync1_via_futex_waitv.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0013-optimize_harder_O3.patch"
@@ -92,7 +91,6 @@ source=(
    linux6.18.22-bore-6.6.3.patch 
    ) 
 sha256sums=(
-  'SKIP'
   'SKIP'
   'SKIP'
   'SKIP'
