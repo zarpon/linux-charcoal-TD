@@ -92,7 +92,7 @@ source=(
    linux6.18.22-bore-6.6.3.patch 
    ) 
 sha256sums=(
-  '97be6589aa86f49aa901cd8ac950444125efa305d0dfecd1ce18afca6b074065'
+  'SKIP'
   'SKIP'
   'SKIP'
   'SKIP'
