@@ -59,10 +59,10 @@ source=(
   drm_sched_rr_default.patch
   ryzen_smu.diff
   xpad-noone.diff
+  "c23.patch::https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=d70f79fef65810faf64dbae1f3a1b5623cdb2345" 
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0002-clear-patches.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.11/0007-v6.11-fsync1_via_futex_waitv.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0013-optimize_harder_O3.patch"
-  "https://dev.gentoo.org/~alicef/genpatches/trunk/6.18/2000_BT-Check-key-sizes-only-if-Secure-Simple-Pairing-enabled.patch"
   "https://dev.gentoo.org/~alicef/genpatches/trunk/6.18/2990_libbpf-v2-workaround-Wmaybe-uninitialized-false-pos.patch"
   "https://dev.gentoo.org/~alicef/genpatches/trunk/6.18/5010_enable-cpu-optimizations-universal.patch"
   "https://raw.githubusercontent.com/CachyOS/kernel-patches/refs/heads/master/6.18/misc/dkms-clang.patch"
@@ -92,7 +92,7 @@ source=(
    linux6.18.22-bore-6.6.3.patch 
    ) 
 sha256sums=(
-  'SKIP'
+  '97be6589aa86f49aa901cd8ac950444125efa305d0dfecd1ce18afca6b074065'
   'SKIP'
   'SKIP'
   'SKIP'
