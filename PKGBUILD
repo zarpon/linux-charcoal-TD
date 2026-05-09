@@ -59,6 +59,7 @@ source=(
   drm_sched_rr_default.patch
   ryzen_smu.diff
   xpad-noone.diff
+  "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/refs/heads/master/linux-tkg-patches/6.18/0012-misc-additions.patch" 
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0002-clear-patches.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.11/0007-v6.11-fsync1_via_futex_waitv.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0013-optimize_harder_O3.patch"
@@ -104,6 +105,7 @@ sha256sums=(
   'SKIP'
   'SKIP'
   'SKIP'
+  'SKIP' 
   '2c9843a51e8dd4b41f7620dcc4bf3677c7867d922073202c095324fb1443cfa5'
   '9df628fd530950e37d31da854cb314d536f33c83935adf5c47e71266a55f7004'
   'aef091d764111c350f1c8e1c55787203a0c88b643d0cf2da53931a58fecc9d5b'
