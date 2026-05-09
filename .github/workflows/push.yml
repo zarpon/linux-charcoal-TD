@@ -34,24 +34,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1 # Baixa apenas o commit mais recente para economizar espaço de git history
+          fetch-depth: 1 
 
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 2 # Reduzido para 2GB para priorizar espaço real em disco para os binários
+          swap-size-gb: 2 
 
       - name: Build docker image
         run: docker build . -t charcoal
 
       - name: Build Kernel
         run: |
-          # Otimização de espaço: concede permissões e remove arquivos desnecessários antes de começar
           chmod -R a+rw .
           
-          # Executa o makepkg dentro do Docker
-          # O uso de MAKEFLAGS='-j2' é vital para não crashar a RAM
-          docker run --rm -v ${PWD}:/project charcoal sudo -u nobody bash -c "export MAKEFLAGS='-j2' && makepkg -Ccf"
+          # Alterado para usar todos os núcleos disponíveis com $(nproc)
+          docker run --rm -v ${PWD}:/project charcoal sudo -u nobody bash -c "export MAKEFLAGS=\"-j$(nproc)\" && makepkg -Ccf"
 
       - name: Upload Artifacts
         if: ${{ success() }}
