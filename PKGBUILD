@@ -59,6 +59,11 @@ source=(
   drm_sched_rr_default.patch
   ryzen_smu.diff
   xpad-noone.diff 
+   6.18-kcompressd-unofficial-0.5.patch
+   6.18.13-Re-swappiness-v1.2.patch 
+   0001-linux6.18-zram-ir-1.2-backport.patch
+   sched-ext-coexistence-fix.patch
+   linux6.18.22-bore-6.6.3.patch  
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0002-clear-patches.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.11/0007-v6.11-fsync1_via_futex_waitv.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0013-optimize_harder_O3.patch"
@@ -84,11 +89,6 @@ source=(
   "git+https://github.com/dlundqvist/xone.git#tag=v0.5.8"
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
-   6.18-kcompressd-unofficial-0.5.patch
-   6.18.13-Re-swappiness-v1.2.patch 
-   0001-linux6.18-zram-ir-1.2-backport.patch
-   sched-ext-coexistence-fix.patch
-   linux6.18.22-bore-6.6.3.patch 
    ) 
 sha256sums=(
 'SKIP'
@@ -104,35 +104,35 @@ sha256sums=(
 'SKIP'
 'SKIP'
 'SKIP'
+ 'SKIP'
+ 'SKIP'
+ 'SKIP'
 'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'bf2186776d96122136019b7b11aea1f0f46914bf107aa83c949e654290f7eed3'
-'78da5c2c011b2679f1309366c3964a919607db5fa1b76a3e426c5af67eded5a1'
-'4929f7a8033f34715c2a19b606c45d0d711e7328452ed1b31a5bf52a0c1a7232'
-'e261cfdf1d03f741ba111c812f3c1d0be2bf2d58e68efe2477a5bd542cd85f2e'
-'SKIP'
-'SKIP'
-'5ef2f14326a5fab8980d1ebb6734ece576f930c173b4980eb026513aa3b1b9d0'
-'bc647f73ec860a0fe7d074c2377588816a616dc2a651b30d7b9cd168863a17c6'
-'5059762e54c8dbe4262d48eafb8d486a54244eec71da5d7b61fc0f5f1c5c2ea7'
-'f22c6983d496d9038fa0f4288ee6cbb5b46837fee5f644f4759e4c26dcdff262'
-'ad78cbbb686baf426f83368db3f7bd4e86051d373652868208e8ba5d18ce68dc'
-'8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
-'281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
-'SKIP'
+  '2c9843a51e8dd4b41f7620dcc4bf3677c7867d922073202c095324fb1443cfa5'
+  '9df628fd530950e37d31da854cb314d536f33c83935adf5c47e71266a55f7004'
+  'aef091d764111c350f1c8e1c55787203a0c88b643d0cf2da53931a58fecc9d5b'
+  'a08fa9d2e7a943399fec7fb08eead6308bb51642c4592a9f57d1b79b06d5495c'
+  'ed36bcab65f959200c91991e3337fd716883ef0915fbec65d6252f09fd72c666'
+  '65b5745c2e07d93495a5aa1ff7269c89e7aef42acff0d018ab05663560bdf8f7'
+  '71e5926efc30833a6fd756b9358529ac695fa688ae71cd74e31dd274ae1ecf05'
+  '6d5371c96444e87ef912f476ff0a34f961579f7adcacafa2aec151a951ad4e7e'
+  'bf2186776d96122136019b7b11aea1f0f46914bf107aa83c949e654290f7eed3'
+  '78da5c2c011b2679f1309366c3964a919607db5fa1b76a3e426c5af67eded5a1'
+  '4929f7a8033f34715c2a19b606c45d0d711e7328452ed1b31a5bf52a0c1a7232'
+  'e261cfdf1d03f741ba111c812f3c1d0be2bf2d58e68efe2477a5bd542cd85f2e'
+  'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+  '2ba19f3c2a8032c6af9fa6ebaf6b77bc7019306b301ff799ca2821ab8fa9f476'
+  '5ef2f14326a5fab8980d1ebb6734ece576f930c173b4980eb026513aa3b1b9d0'
+  'bc647f73ec860a0fe7d074c2377588816a616dc2a651b30d7b9cd168863a17c6'
+  '5059762e54c8dbe4262d48eafb8d486a54244eec71da5d7b61fc0f5f1c5c2ea7'
+  'f22c6983d496d9038fa0f4288ee6cbb5b46837fee5f644f4759e4c26dcdff262'
+  'ad78cbbb686baf426f83368db3f7bd4e86051d373652868208e8ba5d18ce68dc'
+  '8791520229802e19a4f50fcf70422e20bcff63656e1acf0920d3ec2c0f35107f'
+  '281787a4aaed0cf098554964865892404ceb17bdd966db4dcaa5cddfce093c21'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
 )
 
 export KBUILD_BUILD_HOST=archlinux
