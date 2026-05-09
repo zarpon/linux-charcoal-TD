@@ -4,7 +4,7 @@
 
 pkgbase=linux-charcoal-618
 _nepbase=linux-neptune-618
-_tag=6.18.27-valve1
+_tag=6.18.28-valve1
 _ver=1
 pkgver=${_tag//-/.}.cc$_ver
 pkgrel=1
