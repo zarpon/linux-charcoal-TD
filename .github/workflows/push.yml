@@ -13,11 +13,14 @@ jobs:
   build-kernel:
     runs-on: ubuntu-latest
     steps:
-      - name: Free up space (Manual Cleanup)
+      - name: Free up space (Aggressive)
         run: |
-          # Remove pacotes grandes pré-instalados para ganhar ~10GB de espaço real
+          # Remove ferramentas pesadas que não usamos na compilação do kernel
           sudo rm -rf /usr/local/share/boost /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache
-          # Limpeza de diretórios do sistema preservando o necessário para o runner
+          sudo rm -rf /usr/share/swift /usr/local/share/powershell /usr/share/azure-cli
+          # Limpa caches de pacotes
+          sudo apt-get clean
+          # Limpeza de diretórios do sistema
           find /opt/ -maxdepth 1 -mindepth 1 '!' -path /opt/containerd '!' -path /opt/actionarchivecache '!' -path /opt/runner '!' -path /opt/runner-cache -exec rm -rf '{}' ';'
 
       - name: Checkout
@@ -28,31 +31,22 @@ jobs:
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 5  # 5GB é o ideal: ajuda a RAM sem esgotar o armazenamento do SSD
+          swap-size-gb: 2 # Reduzido para 2GB para sobrar espaço em disco para os arquivos do Kernel
+
+      - name: Check Disk Space
+        run: df -h # Adicionado para monitorarmos quanto espaço resta antes do build
 
       - name: Get current tag
         if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         run: echo "current_tag=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null || echo '')" >> $GITHUB_ENV
-
-      - name: Get previous tag
-        if: ${{ env.current_tag }}
-        run: echo "previous_tag=$(git describe --tags --abbrev=0 ${{ env.current_tag }}^ 2>/dev/null || echo '')" >> $GITHUB_ENV
-
-      - name: Generate changelog
-        id: changelog
-        uses: jaywcjlove/changelog-generator@main
-        if: ${{ env.current_tag && env.previous_tag }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build docker image
         run: docker build . -t charcoal
 
       - name: Build Kernel
         run: |
-          # Concede permissão total à pasta de trabalho para evitar erros de escrita do Docker
           chmod -R a+rw .
-          # Executa o build limitando a 2 threads para estabilidade total de memória
+          # O segredo aqui é o -j2 para não estourar a RAM e o chmod para evitar overhead de I/O
           docker run --rm -v ${PWD}:/project charcoal sudo -u nobody bash -c "export MAKEFLAGS='-j2' && makepkg -Ccf"
 
       - name: Upload Artifacts
@@ -70,7 +64,4 @@ jobs:
           tag: ${{ env.current_tag }}
           name: ${{ env.current_tag }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifactErrorsFailBuild: true
-          artifactContentType: application/zstd
-          body: ${{ steps.changelog.outputs.changelog }}
           artifacts: linux-charcoal-*.pkg.tar.zst
