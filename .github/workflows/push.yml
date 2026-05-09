@@ -27,7 +27,7 @@ jobs:
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 4
+          swap-size-gb: 10
 
       - name: Get current tag
         if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
