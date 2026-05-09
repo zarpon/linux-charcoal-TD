@@ -23,6 +23,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 4
+
       - name: Get current tag
         if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         run: echo "current_tag=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null || echo '')" >> $GITHUB_ENV
@@ -40,7 +46,7 @@ jobs:
       - name: Build Kernel
         run: |
           docker run --rm -v ${PWD}:/project charcoal chown -R nobody /project
-          docker run --rm -v ${PWD}:/project charcoal sudo -u nobody makepkg -Ccf
+          docker run --rm -v ${PWD}:/project charcoal sudo -u nobody bash -c "export MAKEFLAGS='-j2' && makepkg -Ccf"
       - name: Upload Artifacts
         if: ${{ ! env.current_tag }}
         uses: actions/upload-artifact@v4
