@@ -1,51 +1,75 @@
 name: Build
-
 on:
   push:
   pull_request:
     types: [opened, reopened, edited]
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   build-kernel:
     runs-on: ubuntu-latest
     steps:
       - name: Free up space (1)
         run: find /opt/ -maxdepth 1 -mindepth 1 '!' -path /opt/containerd '!' -path /opt/actionarchivecache '!' -path /opt/runner '!' -path /opt/runner-cache -exec echo Deleting '{}' ';' -exec rm -rf '{}' ';'
+      
       - name: Free up space (2)
         uses: jlumbroso/free-disk-space@v1.3.1
         with:
           tool-cache: true
+
+      - name: Disable zswap and configure zram
+        run: |
+          # Desativa o zswap
+          echo 0 | sudo tee /sys/module/zswap/parameters/enabled
+          
+          # Carrega o módulo zram
+          sudo modprobe zram
+          
+          # Define a compressão como zstd
+          echo zstd | sudo tee /sys/block/zram0/comp_algorithm
+          
+          # Captura o total de RAM em bytes e define como tamanho do zram
+          TOTAL_RAM=$(free -b | awk '/^Mem:/{print $2}')
+          echo $TOTAL_RAM | sudo tee /sys/block/zram0/disksize
+          
+          # Inicializa e ativa o swap com prioridade alta (32767 é o máximo no Linux)
+          sudo mkswap /dev/zram0
+          sudo swapon --priority 32767 /dev/zram0
+
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-         swap-size-gb: 2
-
+          swap-size-gb: 2
+          
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
       - name: Get current tag
         if: ${{ github.event_name == 'push' && github.ref_name == '6.18' }}
         run: echo "current_tag=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null || echo '')" >> $GITHUB_ENV
+        
       - name: Get previous tag
         if: ${{ env.current_tag }}
         run: echo "previous_tag=$(git describe --tags --abbrev=0 ${{ env.current_tag }}^ 2>/dev/null || echo '')" >> $GITHUB_ENV
+        
       - name: Generate changelog
         id: changelog
         uses: jaywcjlove/changelog-generator@main
         if: ${{ env.current_tag && env.previous_tag }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Build docker image
         run: docker build . -t charcoal
+        
       - name: Build Kernel
         run: |
           docker run --rm -v ${PWD}:/project charcoal chown -R nobody /project
           docker run --rm -e MAKEFLAGS="-j$(nproc)" -v ${PWD}:/project charcoal sudo -u nobody makepkg -Ccf
+          
       - name: Upload Artifacts
         if: ${{ ! env.current_tag }}
         uses: actions/upload-artifact@v4
@@ -53,6 +77,7 @@ jobs:
           name: linux-charcoal
           path: linux-charcoal-*.pkg.tar.zst
           if-no-files-found: warn
+          
       - name: Publish release
         if: ${{ env.current_tag }}
         uses: ncipollo/release-action@v1
