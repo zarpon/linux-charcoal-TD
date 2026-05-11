@@ -18,29 +18,21 @@ jobs:
         with:
           tool-cache: true
 
-      - name: Disable zswap and configure zram
+      - name: Configure zswap
         run: |
-          # Desativa o zswap
-          echo 0 | sudo tee /sys/module/zswap/parameters/enabled
+          # Ativa o zswap em tempo de execução
+          echo Y | sudo tee /sys/module/zswap/parameters/enabled
           
-          # Carrega o módulo zram
-          sudo modprobe zram
+          # Altera o algoritmo de compressão para zstd
+          echo zstd | sudo tee /sys/module/zswap/parameters/compressor
           
-          # Define a compressão como zstd
-          echo zstd | sudo tee /sys/block/zram0/comp_algorithm
-          
-          # Captura o total de RAM em bytes e define como tamanho do zram
-          TOTAL_RAM=$(free -b | awk '/^Mem:/{print $2}')
-          echo $TOTAL_RAM | sudo tee /sys/block/zram0/disksize
-          
-          # Inicializa e ativa o swap com prioridade alta (32767 é o máximo no Linux)
-          sudo mkswap /dev/zram0
-          sudo swapon --priority 32767 /dev/zram0
+          # Define o tamanho máximo do pool na RAM para 20%
+          echo 20 | sudo tee /sys/module/zswap/parameters/max_pool_percent
 
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 2
+          swap-size-gb: 4
           
       - name: Checkout
         uses: actions/checkout@v4
