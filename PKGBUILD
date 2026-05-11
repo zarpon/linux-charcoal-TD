@@ -56,7 +56,7 @@ source=(
   99-charcoal.sh
   vangogh_allow_higher_cpu_freq.patch
   vangogh_higher_max_power_limit.patch
-  drm_sched_Fair_default.patch
+  drm_sched_rr_default.patch
   ryzen_smu.diff
   xpad-noone.diff
   "https://raw.githubusercontent.com/firelzrd/kcompressd-unofficial/refs/heads/main/patches/stable/0001-linux6.18-kcompressd-unofficial-0.5.patch"
