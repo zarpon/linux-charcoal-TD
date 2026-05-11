@@ -33,6 +33,11 @@ jobs:
         uses: pierotofy/set-swap-space@master
         with:
           swap-size-gb: 4
+
+      - name: Optimize VM parameters
+        run: |
+          # Define page-cluster como 0 para otimizar com zswap (desativa read-ahead agressivo)
+          sudo sysctl -w vm.page-cluster=0
           
       - name: Checkout
         uses: actions/checkout@v4
