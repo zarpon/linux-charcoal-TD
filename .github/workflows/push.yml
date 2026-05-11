@@ -1,82 +1,92 @@
 name: Build
+
 on:
   push:
   pull_request:
-    types: [opened, reopened, edited]
+    types: [opened, reopened, synchronize]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   build-kernel:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Free up space (1)
-        run: find /opt/ -maxdepth 1 -mindepth 1 '!' -path /opt/containerd '!' -path /opt/actionarchivecache '!' -path /opt/runner '!' -path /opt/runner-cache -exec echo Deleting '{}' ';' -exec rm -rf '{}' ';'
-      
-      - name: Free up space (2)
+      - name: Free up space
         uses: jlumbroso/free-disk-space@v1.3.1
         with:
           tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
 
       - name: Configure zswap
         run: |
-          # Ativa o zswap em tempo de execução
           echo Y | sudo tee /sys/module/zswap/parameters/enabled
-          
-          # Altera o algoritmo de compressão para zstd
           echo zstd | sudo tee /sys/module/zswap/parameters/compressor
-          
-          # Define o tamanho máximo do pool na RAM para 20%
-          echo 20 | sudo tee /sys/module/zswap/parameters/max_pool_percent
+          echo 25 | sudo tee /sys/module/zswap/parameters/max_pool_percent
 
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 2
+          swap-size-gb: 8
 
       - name: Optimize VM parameters
         run: |
-          # Define page-cluster como 0 para otimizar com zswap (desativa read-ahead agressivo)
           sudo sysctl -w vm.page-cluster=0
-          
+          sudo sysctl -w vm.swappiness=180
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          
+          fetch-depth: 1
+
+      - name: Fetch tags
+        if: ${{ github.event_name == 'push' && github.ref_name == '6.18' }}
+        run: git fetch --tags --force
+
       - name: Get current tag
         if: ${{ github.event_name == 'push' && github.ref_name == '6.18' }}
         run: echo "current_tag=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null || echo '')" >> $GITHUB_ENV
-        
+
       - name: Get previous tag
-        if: ${{ env.current_tag }}
+        if: ${{ env.current_tag != '' }}
         run: echo "previous_tag=$(git describe --tags --abbrev=0 ${{ env.current_tag }}^ 2>/dev/null || echo '')" >> $GITHUB_ENV
-        
+
       - name: Generate changelog
         id: changelog
         uses: jaywcjlove/changelog-generator@main
-        if: ${{ env.current_tag && env.previous_tag }}
+        if: ${{ env.current_tag != '' && env.previous_tag != '' }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Build docker image
         run: docker build . -t charcoal
-        
+
       - name: Build Kernel
         run: |
-          docker run --rm -v ${PWD}:/project charcoal chown -R nobody /project
-          docker run --rm -e MAKEFLAGS="-j$(nproc)" -v ${PWD}:/project charcoal sudo -u nobody makepkg -Ccf
-          
+          docker run --rm \
+            -v ${PWD}:/project \
+            charcoal chown -R nobody /project
+
+          docker run --rm \
+            -e MAKEFLAGS="-j3" \
+            -v ${PWD}:/project \
+            charcoal sudo -u nobody makepkg -Ccf
+
       - name: Upload Artifacts
-        if: ${{ ! env.current_tag }}
+        if: ${{ env.current_tag == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: linux-charcoal
           path: linux-charcoal-*.pkg.tar.zst
           if-no-files-found: warn
-          
+
       - name: Publish release
-        if: ${{ env.current_tag }}
+        if: ${{ env.current_tag != '' }}
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.current_tag }}
