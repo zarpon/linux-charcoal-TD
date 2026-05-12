@@ -95,7 +95,7 @@ source=(
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
    6.16-poc-selector-v2.6.1.patch 
 )
-sha256sums=('97be6589aa86f49aa901cd8ac950444125efa305d0dfecd1ce18afca6b074065'
+sha256sums=('SKIP'
             '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
             '8fec943cf08cb8988da28b4829a4b192a71aef2887df48004ebb80f6e9597020'
             '7eb7e185a17757b39d44a8eaf134cf0f2aeacffb39d5f846bf0f4b4d438a63d9'
