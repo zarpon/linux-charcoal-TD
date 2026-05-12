@@ -93,7 +93,7 @@ source=(
   "git+https://github.com/dlundqvist/xone.git#tag=v0.5.8"
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
-  "https://raw.githubusercontent.com/firelzrd/poc-selector/refs/heads/main/patches/stable/0001-6.18.3-poc-selector-v2.6.1.patch" 
+   6.16-poc-selector-v2.6.1.patch 
 )
 sha256sums=('97be6589aa86f49aa901cd8ac950444125efa305d0dfecd1ce18afca6b074065'
             '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
