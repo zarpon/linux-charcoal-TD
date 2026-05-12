@@ -3,7 +3,7 @@ name: Build
 on:
   push:
   pull_request:
-    types: [opened, reopened, edited]
+    types: [opened, reopened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,48 +12,88 @@ concurrency:
 jobs:
   build-kernel:
     runs-on: ubuntu-latest
-    steps:
-      - name: Maximize Disk Space (Ultra-Aggressive)
-        run: |
-          # Remove grandes runtimes e SDKs que ocupam ~25GB+
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/lib/jvm
-          sudo rm -rf /usr/share/swift /usr/local/share/powershell /usr/share/azure-cli /opt/az
-          sudo rm -rf "/usr/local/share/chromium" "/usr/local/lib/node_modules"
-          
-          # Limpa caches de pacotes e arquivos temporários do sistema
-          sudo apt-get autoremove -y >/dev/null 2>&1
-          sudo apt-get autoclean -y >/dev/null 2>&1
-          sudo docker image prune -af
-          
-          # Limpeza profunda em /opt preservando apenas o essencial para o runner
-          find /opt/ -maxdepth 1 -mindepth 1 '!' -path /opt/containerd '!' -path /opt/actionarchivecache '!' -path /opt/runner '!' -path /opt/runner-cache -exec sudo rm -rf '{}' ';'
-          
-          echo "Espaço disponível após limpeza:"
-          df -h /
 
-      - name: Checkout
-        uses: actions/checkout@v4
+    steps:
+      - name: Free up space
+        uses: jlumbroso/free-disk-space@v1.3.1
         with:
-          fetch-depth: 1 
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+
+      - name: Configure zswap
+        run: |
+          echo Y | sudo tee /sys/module/zswap/parameters/enabled
+          echo zstd | sudo tee /sys/module/zswap/parameters/compressor
+          echo 40 | sudo tee /sys/module/zswap/parameters/max_pool_percent
+          echo 1 | sudo tee /sys/module/zswap/parameters/shrinker_enabled
 
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 2 
+          swap-size-gb: 16
+
+      - name: Optimize VM parameters
+        run: |
+          sudo sysctl -w vm.page-cluster=0
+          sudo sysctl -w vm.swappiness=180
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch tags
+        if: ${{ github.event_name == 'push' && github.ref_name == '6.18' }}
+        run: git fetch --tags --force
+
+      - name: Get current tag
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        run: echo "current_tag=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null || echo '')" >> $GITHUB_ENV
+
+      - name: Get previous tag
+        if: ${{ env.current_tag != '' }}
+        run: echo "previous_tag=$(git describe --tags --abbrev=0 ${{ env.current_tag }}^ 2>/dev/null || echo '')" >> $GITHUB_ENV
+
+      - name: Generate changelog
+        id: changelog
+        uses: jaywcjlove/changelog-generator@main
+        if: ${{ env.current_tag != '' && env.previous_tag != '' }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build docker image
         run: docker build . -t charcoal
 
       - name: Build Kernel
         run: |
-          chmod -R a+rw .
-          
-          # Alterado para usar todos os núcleos disponíveis com $(nproc)
-          docker run --rm -v ${PWD}:/project charcoal sudo -u nobody bash -c "export MAKEFLAGS=\"-j$(nproc)\" && makepkg -Ccf"
+          docker run --rm \
+            -v ${PWD}:/project \
+            charcoal chown -R nobody /project
+
+          docker run --rm \
+            -e MAKEFLAGS="-j3" \
+            -v ${PWD}:/project \
+            charcoal sudo -u nobody makepkg -Ccf
 
       - name: Upload Artifacts
-        if: ${{ success() }}
+        if: ${{ env.current_tag == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: linux-charcoal
           path: linux-charcoal-*.pkg.tar.zst
+          if-no-files-found: warn
+
+      - name: Publish release
+        if: ${{ env.current_tag != '' }}
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.current_tag }}
+          name: ${{ env.current_tag }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifactErrorsFailBuild: true
+          artifactContentType: application/zstd
+          body: ${{ steps.changelog.outputs.changelog }}
+          artifacts: linux-charcoal-*.pkg.tar.zst
