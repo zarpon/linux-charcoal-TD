@@ -28,7 +28,7 @@ jobs:
           echo Y | sudo tee /sys/module/zswap/parameters/enabled
           echo zstd | sudo tee /sys/module/zswap/parameters/compressor
           echo 40 | sudo tee /sys/module/zswap/parameters/max_pool_percent
-          echo y | sudo tee /sys/module/zswap/parameters/shrinker_enabled
+          echo 1 | sudo tee /sys/module/zswap/parameters/shrinker_enabled
 
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
