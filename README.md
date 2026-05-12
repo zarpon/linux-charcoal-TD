@@ -25,10 +25,15 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - Fix dkms with LLVM clang (from CachyOS)
 - Add [ryzen_smu](https://github.com/amkillam/ryzen_smu)
 - Add [xone](https://github.com/dlundqvist/xone), [xpad-noone](https://github.com/forkymcforkface/xpad-noone) and [xpadneo](https://github.com/atar-axis/xpadneo)
+
 Adicionados patch re-swappiness
 (https://github.com/firelzrd/re-swappiness)
+
 Adicionado Kcompressd-unofficial 
 (https://github.com/firelzrd/kcompressd-unofficial)
+
+Add poc selector
+(https://github.com/firelzrd/poc-selector) 
 
 # Install
 
