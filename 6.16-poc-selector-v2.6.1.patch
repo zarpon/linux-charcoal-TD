@@ -1,7 +1,7 @@
 From 854c284516887b6bdf6a3a3f2507ce873151a4d5 Mon Sep 17 00:00:00 2001
 From: Masahito S <firelzrd@gmail.com>
 Date: Mon, 27 Apr 2026 11:07:36 +0900
-Subject: [PATCH] 6.18.3-poc-selector-v2.6.1 (backport to 6.16)
+Subject: [PATCH] 6.18.3-poc-selector-v2.6.1
 
 ---
  include/linux/sched/topology.h |   50 +-
@@ -19,7 +19,7 @@ diff --git a/include/linux/sched/topology.h b/include/linux/sched/topology.h
 index bbcfdf12aa..c10c871dea 100644
 --- a/include/linux/sched/topology.h
 +++ b/include/linux/sched/topology.h
-@@ -76,8 +76,54 @@ struct sched_group;
+@@ -66,8 +66,54 @@ struct sched_group;
  struct sched_domain_shared {
  	atomic_t	ref;
  	atomic_t	nr_busy_cpus;
@@ -80,7 +80,7 @@ diff --git a/init/Kconfig b/init/Kconfig
 index cab3ad28ca..991fe7f8a4 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1436,6 +1436,19 @@ config SCHED_AUTOGROUP
+@@ -1435,6 +1435,19 @@ config SCHED_AUTOGROUP
  	  desktop applications.  Task group autogeneration is currently based
  	  upon task session.
  
@@ -104,7 +104,7 @@ diff --git a/kernel/sched/ext.c b/kernel/sched/ext.c
 index b959a70471..ce89f9627f 100644
 --- a/kernel/sched/ext.c
 +++ b/kernel/sched/ext.c
-@@ -5022,6 +5022,9 @@ static void scx_disable_workfn(struct kthread_work *work)
+@@ -4076,6 +4076,9 @@ static void scx_disable_workfn(struct kthread_work *work)
  	mutex_unlock(&scx_enable_mutex);
  
  	WARN_ON_ONCE(scx_set_enable_state(SCX_DISABLED) != SCX_DISABLING);
@@ -114,7 +114,7 @@ index b959a70471..ce89f9627f 100644
  done:
  	scx_bypass(false);
  }
-@@ -5727,6 +5730,10 @@ static int scx_enable(struct sched_ext_ops *ops, struct bpf_link *link)
+@@ -4814,6 +4817,10 @@ static int scx_enable(struct sched_ext_ops *ops, struct bpf_link *link)
  	if (!(ops->flags & SCX_OPS_SWITCH_PARTIAL))
  		static_branch_enable(&__scx_switched_all);
  
@@ -137,7 +137,7 @@ index 967ca52fb2..1afd1838f5 100644
  
  #include <asm/switch_to.h>
  
-@@ -1083,7 +1084,7 @@ static bool update_deadline(struct cfs_rq *cfs_rq, struct sched_entity *se)
+@@ -1064,7 +1065,7 @@ static bool update_deadline(struct cfs_rq *cfs_rq, struct sched_entity *se)
  
  #include "pelt.h"
  
@@ -146,7 +146,7 @@ index 967ca52fb2..1afd1838f5 100644
  static unsigned long task_h_load(struct task_struct *p);
  static unsigned long capacity_of(int cpu);
  
-@@ -7699,6 +7700,20 @@ void __update_idle_core(struct rq *rq)
+@@ -7601,6 +7602,20 @@ void __update_idle_core(struct rq *rq)
  	rcu_read_unlock();
  }
  
@@ -167,7 +167,7 @@ index 967ca52fb2..1afd1838f5 100644
  /*
   * Scan the entire LLC domain for idle cores; this dynamically switches off if
   * there are no idle cores left in the system; tracked through
-@@ -7780,6 +7795,11 @@ static inline bool test_idle_cores(int cpu)
+@@ -7668,6 +7683,11 @@ static inline bool test_idle_cores(int cpu)
  	return false;
  }
  
@@ -179,7 +179,7 @@ index 967ca52fb2..1afd1838f5 100644
  static inline int select_idle_core(struct task_struct *p, int core, struct cpumask *cpus, int *idle_cpu)
  {
  	return __select_idle_cpu(core, p);
-@@ -7934,16 +7954,38 @@ static inline bool asym_fits_cpu(unsigned long util,
+@@ -7817,16 +7837,38 @@ static inline bool asym_fits_cpu(unsigned long util,
  	return true;
  }
  
@@ -219,7 +219,7 @@ index 967ca52fb2..1afd1838f5 100644
  	/*
  	 * On asymmetric system, update task utilization because we will check
  	 * that the task fits with CPU's capacity.
-@@ -7982,23 +8024,13 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
+@@ -7843,23 +7885,13 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
  	 */
  	lockdep_assert_irqs_disabled();
  
@@ -248,7 +248,7 @@ index 967ca52fb2..1afd1838f5 100644
  
  	/*
  	 * Allow a per-cpu kthread to stack with the wakee if the
-@@ -8006,24 +8038,6 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
+@@ -7877,24 +7909,6 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
  		return prev;
  	}
  
@@ -273,7 +273,7 @@ index 967ca52fb2..1afd1838f5 100644
  	/*
  	 * For asymmetric CPU capacity systems, our domain of interest is
  	 * sd_asym_cpucapacity rather than sd_llc.
-@@ -8030,6 +8044,74 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
+@@ -7919,6 +7933,74 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
  	if (!sd)
  		return target;
  
@@ -348,7 +348,7 @@ index 967ca52fb2..1afd1838f5 100644
  	if (sched_smt_active()) {
  		has_idle_core = test_idle_cores(target);
  
-@@ -8112,6 +8194,9 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
+@@ -7933,6 +8015,9 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
  	if ((unsigned)i < nr_cpumask_bits)
  		return i;
  
@@ -358,7 +358,7 @@ index 967ca52fb2..1afd1838f5 100644
  	/*
  	 * For cluster machines which have lower sharing cache like L2 or
  	 * LLC Tag, we tend to find an idle CPU in the target's cluster
-@@ -8126,6 +8211,13 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
+@@ -7944,6 +8029,13 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
  	if ((unsigned int)recent_used_cpu < nr_cpumask_bits)
  		return recent_used_cpu;
  
@@ -372,7 +372,7 @@ index 967ca52fb2..1afd1838f5 100644
  	return target;
  }
  
-@@ -8817,7 +8909,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int wake_flags)
+@@ -8628,7 +8720,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int wake_flags)
  		new_cpu = sched_balance_find_dst_cpu(sd, p, cpu, prev_cpu, sd_flag);
  	} else if (wake_flags & WF_TTWU) { /* XXX always ? */
  		/* Fast path */
@@ -385,7 +385,7 @@ diff --git a/kernel/sched/idle.c b/kernel/sched/idle.c
 index c39b089d4f..3fffa1a43f 100644
 --- a/kernel/sched/idle.c
 +++ b/kernel/sched/idle.c
-@@ -270,6 +270,11 @@ static void do_idle(void)
+@@ -275,6 +275,11 @@ static void do_idle(void)
  	__current_set_polling();
  	tick_nohz_idle_enter();
  
@@ -433,16 +433,16 @@ index 0000000000..5bbd927828
 + * Copyright (C) 2026 Masahito Suzuki
 + *
 + * Acknowledgements:
-+ *   This work is heavily inspired by RitzDaCat's scx_cake scheduler.
++ * This work is heavily inspired by RitzDaCat's scx_cake scheduler.
 + *
-+ *   Special thanks to the algorithm inventors whose research enabled
-+ *   the O(1) techniques used in this implementation:
++ * Special thanks to the algorithm inventors whose research enabled
++ * the O(1) techniques used in this implementation:
 + *
-+ *     - Prashant Pandey, Michael A. Bender, Rob Johnson
-+ *       ("A Fast x86 Implementation of Select")
++ * - Prashant Pandey, Michael A. Bender, Rob Johnson
++ * ("A Fast x86 Implementation of Select")
 + *
-+ *     - Daniel Lemire
-+ *       ("Fast Random Integer Generation in an Interval")
++ * - Daniel Lemire
++ * ("Fast Random Integer Generation in an Interval")
 + */
 +
 +#ifdef CONFIG_SCHED_POC_SELECTOR
@@ -465,12 +465,12 @@ index 0000000000..5bbd927828
 + * Derived from: sched_poc_selector && !poc_selector_skip
 + *
 + * sched_poc_selector: user-visible sysctl (kernel.sched_poc_selector),
-+ *                     plain bool, default true.
++ * plain bool, default true.
 + * poc_selector_skip:  set true while sched_ext is active to avoid
-+ *                     idle-bitmap overhead in do_idle.
++ * idle-bitmap overhead in do_idle.
 + * poc_selector_active: the actual static key gating all POC hot paths.
-+ *                      Enabled only when sched_poc_selector && !poc_selector_skip.
-+ *                      On enable transition, poc_resync_idle_state() is called.
++ * Enabled only when sched_poc_selector && !poc_selector_skip.
++ * On enable transition, poc_resync_idle_state() is called.
 + */
 +DEFINE_STATIC_KEY_TRUE(poc_selector_active);
 +static bool sched_poc_selector = true;
@@ -499,7 +499,7 @@ index 0000000000..5bbd927828
 + * When true (default), SMT siblings occupy consecutive LLC-relative
 + * positions (e.g., CPU 0,1 / 2,3 / ...).  The idle core mask is
 + * derived from the idle CPU mask via bit-parallel operations:
-+ *   core_mask = cpu_mask & (cpu_mask >> 1) & 0x5555555555555555ULL
++ * core_mask = cpu_mask & (cpu_mask >> 1) & 0x5555555555555555ULL
 + *
 + * Disabled at boot if non-consecutive 2-way SMT or >2-way SMT
 + * is detected on any LLC.
@@ -512,7 +512,7 @@ index 0000000000..5bbd927828
 + * When true (default), all cores in every LLC have uniform 2-way SMT
 + * with a constant stride between siblings.  The idle core mask is
 + * derived at read time via:
-+ *   core_mask = cpu_mask & (cpu_mask >> poc_smt_shift) & poc_primary_mask
++ * core_mask = cpu_mask & (cpu_mask >> poc_smt_shift) & poc_primary_mask
 + *
 + * This covers both consecutive (stride=1) and stride-N (e.g., Intel
 + * Xeon) layouts without write-path overhead.
@@ -544,10 +544,10 @@ index 0000000000..5bbd927828
 + *
 + * When enabled, select_idle_sibling performs idle-core checks
 + * for recent_used_cpu and target BEFORE entering POC search:
-+ *   - recent_used_cpu with fully idle core → return immediately
-+ *     (matches upstream CFS Gate 4 behavior)
-+ *   - target with fully idle core → return immediately
-+ *     (avoids POC overhead: RCU deref, bitmap read, mask ops)
++ * - recent_used_cpu with fully idle core → return immediately
++ * (matches upstream CFS Gate 4 behavior)
++ * - target with fully idle core → return immediately
++ * (avoids POC overhead: RCU deref, bitmap read, mask ops)
 + *
 + * These two checks must be toggled together to preserve POC's
 + * internal priority order (Level 1r before 1t).  Enabling only
@@ -591,8 +591,8 @@ index 0000000000..5bbd927828
 + * priority search.  Cluster candidates (Level 2) and LLC-wide
 + * candidates (Level 3) are packed into a single 64-bit word:
 + *
-+ *   bits [31:0]:  cluster idle candidates (high priority)
-+ *   bits [63:32]: all LLC idle candidates (low priority)
++ * bits [31:0]:  cluster idle candidates (high priority)
++ * bits [63:32]: all LLC idle candidates (low priority)
 + *
 + * A single TZCNT resolves both levels simultaneously.
 + * ror32-based rotation distributes selections across idle CPUs.
@@ -611,13 +611,13 @@ index 0000000000..5bbd927828
 + * When enabled (default), idle CPU selection in poc_select_rr,
 + * poc_cluster_search, and the packed priority search uses an
 + * improved RR strategy combining two techniques:
-+ *   1. total size case-split (1/2/>=3): direct / interleave / full
-+ *   2. golden-ratio scrambling (Lemire fastrange)
++ * 1. total size case-split (1/2/>=3): direct / interleave / full
++ * 2. golden-ratio scrambling (Lemire fastrange)
 + *
 + * When disabled, the current strategy is used unchanged:
-+ *   - poc_select_rr:   poc_rr_step[] table (perfect RR)
-+ *   - poc_cluster_search: ctz lowest-bit selection (no RR)
-+ *   - packed search:   ror32(counter & 31)
++ * - poc_select_rr:   poc_rr_step[] table (perfect RR)
++ * - poc_cluster_search: ctz lowest-bit selection (no RR)
++ * - packed search:   ror32(counter & 31)
 + *
 + * The current path is preserved as the A/B-testing baseline;
 + * once the improved path is validated, the legacy code will
@@ -713,19 +713,19 @@ index 0000000000..5bbd927828
 + * Division-free modulo via 16-bit fixed-point reciprocal multiplication
 + *
 + * The multiply-and-shift technique is inspired by:
-+ *   D. Lemire, "Fast Random Integer Generation in an Interval",
-+ *   ACM Trans. Model. Comput. Simul. 29, 1, Article 3, 2019.
++ * D. Lemire, "Fast Random Integer Generation in an Interval",
++ * ACM Trans. Model. Comput. Simul. 29, 1, Article 3, 2019.
 + *
 + * Combined with poc_rr_step[], this replaces modulo with two
 + * multiplications and a shift:
-+ *   phase = (u16)(counter * poc_rr_step[total - 1])
-+ *   pick  = POC_FIXED_MOD16(phase, total)
++ * phase = (u16)(counter * poc_rr_step[total - 1])
++ * pick  = POC_FIXED_MOD16(phase, total)
 + *
 + * Proof that pick == counter % total (for total ≤ 64):
-+ *   Let S = ceil(2^16 / N).  For k in [0, N):
-+ *     k*S*N / 2^16 ∈ [k, k + kN/2^16)
-+ *   Since kN < N² ≤ 64² = 4096 ≪ 2^16, floor(kN/2^16) = 0,
-+ *   so floor(k*S*N / 2^16) = k.  QED.
++ * Let S = ceil(2^16 / N).  For k in [0, N):
++ * k*S*N / 2^16 ∈ [k, k + kN/2^16)
++ * Since kN < N² ≤ 64² = 4096 ≪ 2^16, floor(kN/2^16) = 0,
++ * so floor(k*S*N / 2^16) = k.  QED.
 + */
 +#define POC_FIXED_MOD16(phase, range) ((u32)(((u32)(phase) * (u32)(range)) >> 16))
 +
@@ -733,8 +733,8 @@ index 0000000000..5bbd927828
 + * POC_FASTRANGE — Map a 32-bit scrambled value to [0, range)
 + *
 + * Implements Lemire's fastrange technique:
-+ *   D. Lemire, "Fast Random Integer Generation in an Interval",
-+ *   ACM Trans. Model. Comput. Simul. 29, 1, Article 3, 2019.
++ * D. Lemire, "Fast Random Integer Generation in an Interval",
++ * ACM Trans. Model. Comput. Simul. 29, 1, Article 3, 2019.
 + *
 + * Computes (seed * range) >> 32, giving a uniform mapping of
 + * a 32-bit seed into [0, range) using only one 64-bit multiply
@@ -751,8 +751,8 @@ index 0000000000..5bbd927828
 + * 64 entries × 2 bytes = 128 bytes = exactly 2 cache lines.
 + */
 +static const u16 poc_rr_step[64] = {
-+	     0, 0x8000, 0x5556, 0x4000,	0x3334, 0x2AAB, 0x2493, 0x2000,	/*  1.. 8 */
-+	0x1C72, 0x199A, 0x1746, 0x1556,	0x13B2, 0x124A, 0x1112, 0x1000,	/*  9..16 */
++	     0, 0x8000, 0x5556, 0x4000,	0x3334, 0x2AAB, 0x2493, 0x2000,	/* 1.. 8 */
++	0x1C72, 0x199A, 0x1746, 0x1556,	0x13B2, 0x124A, 0x1112, 0x1000,	/* 9..16 */
 +	0x0F10, 0x0E39, 0x0D7A, 0x0CCD,	0x0C31, 0x0BA3, 0x0B22, 0x0AAB,	/* 17..24 */
 +	0x0A3E, 0x09D9, 0x097C, 0x0925,	0x08D4, 0x0889, 0x0843, 0x0800,	/* 25..32 */
 +	0x07C2, 0x0788, 0x0751, 0x071D,	0x06EC, 0x06BD, 0x0691, 0x0667,	/* 33..40 */
@@ -770,19 +770,19 @@ index 0000000000..5bbd927828
 + *
 + * Three-tier architecture detection:
 + *
-+ *   Tier 1: Native hardware CTZ with well-defined zero semantics
-+ *     x86-64 + BMI1 (__BMI__): TZCNT — returns 64 for input 0
-+ *     ARM64:                   RBIT + CLZ
-+ *     RISC-V Zbb:              CTZ instruction
++ * Tier 1: Native hardware CTZ with well-defined zero semantics
++ * x86-64 + BMI1 (__BMI__): TZCNT — returns 64 for input 0
++ * ARM64:                   RBIT + CLZ
++ * RISC-V Zbb:              CTZ instruction
 + *
-+ *   Tier 2: x86-64 without BMI1 (Bulldozer, pre-Haswell, etc.)
-+ *     BSF is fast (~3 cyc) but UNDEFINED for input 0.
-+ *     On AMD Bulldozer: BSF(0) leaves dest register unchanged (stale value).
-+ *     On Intel pre-Haswell: BSF(0) is architecturally undefined.
-+ *     Wrap with explicit zero check to guarantee returning 64.
++ * Tier 2: x86-64 without BMI1 (Bulldozer, pre-Haswell, etc.)
++ * BSF is fast (~3 cyc) but UNDEFINED for input 0.
++ * On AMD Bulldozer: BSF(0) leaves dest register unchanged (stale value).
++ * On Intel pre-Haswell: BSF(0) is architecturally undefined.
++ * Wrap with explicit zero check to guarantee returning 64.
 + *
-+ *   Tier 3: De Bruijn fallback (BPF, unknown architectures)
-+ *     Software multiply + 64-entry table lookup, branchless O(1).
++ * Tier 3: De Bruijn fallback (BPF, unknown architectures)
++ * Software multiply + 64-entry table lookup, branchless O(1).
 + */
 +
 +/*
@@ -805,18 +805,18 @@ index 0000000000..5bbd927828
 + * POC_PTSELECT — Select position of the j-th set bit in a 64-bit word
 + *
 + * Based on the algorithm described in:
-+ *   P. Pandey, M. A. Bender, R. Johnson,
-+ *   "A Fast x86 Implementation of Select", arXiv:1706.00990, 2017.
++ * P. Pandey, M. A. Bender, R. Johnson,
++ * "A Fast x86 Implementation of Select", arXiv:1706.00990, 2017.
 + *
 + * Returns the bit position (0-indexed) of the j-th set bit in v.
 + * Undefined behavior if j >= popcount(v).
 + *
-+ *   Tier 1 (x86-64 + BMI2, excluding AMD Zen 1/2 slow microcode PDEP):
-+ *     PDEP + TZCNT — 4 instructions total.
-+ *     PDEP deposits the j-th source bit at the j-th mask position.
++ * Tier 1 (x86-64 + BMI2, excluding AMD Zen 1/2 slow microcode PDEP):
++ * PDEP + TZCNT — 4 instructions total.
++ * PDEP deposits the j-th source bit at the j-th mask position.
 + *
-+ *   Tier 2 (fallback): Iterative bit-clear — O(j) iterations
-+ *     Clears the lowest set bit j times, then CTZ on remainder.
++ * Tier 2 (fallback): Iterative bit-clear — O(j) iterations
++ * Clears the lowest set bit j times, then CTZ on remainder.
 + */
 +
 +#if defined(__x86_64__) && defined(__BMI2__) && \
@@ -833,7 +833,7 @@ index 0000000000..5bbd927828
 +
 +/*
 + * Tier 2 (fallback): Iterative bit-clear — O(j) iterations.
-+ *   Clears the lowest set bit j times, then returns its position via CTZ.
++ * Clears the lowest set bit j times, then returns its position via CTZ.
 + */
 +#else
 +static __always_inline int poc_ptselect_sw(u64 v, int j)
@@ -865,12 +865,12 @@ index 0000000000..5bbd927828
 +/*
 + * POC_BMP8 - Convert one 8-byte slice of the flag array to 8 packed bits.
 + *
-+ *   Tier 1 (x86-64 + BMI2, excluding AMD Zen 1/2 slow microcode PEXT):
-+ *     PEXT extracts bit 0 of each byte directly into 8 contiguous bits.
-+ *     Single instruction replaces AND + MUL + SHR.
++ * Tier 1 (x86-64 + BMI2, excluding AMD Zen 1/2 slow microcode PEXT):
++ * PEXT extracts bit 0 of each byte directly into 8 contiguous bits.
++ * Single instruction replaces AND + MUL + SHR.
 + *
-+ *   Tier 2 (fallback): Multiply-and-shift trick.
-+ *     Isolates bit 0 of each byte (AND), packs via MUL, shifts to position.
++ * Tier 2 (fallback): Multiply-and-shift trick.
++ * Isolates bit 0 of each byte (AND), packs via MUL, shifts to position.
 + */
 +#if defined(__x86_64__) && defined(__BMI2__) && \
 +    !defined(__znver1) && !defined(__znver2)
@@ -958,17 +958,17 @@ index 0000000000..5bbd927828
 + *
 + * Three-tier derivation:
 + *
-+ *   Tier 1 (consecutive 2-way SMT): 3 register ops with compile-time
-+ *   constants — AND, SHR 1, AND 0x5555...  No memory loads.
++ * Tier 1 (consecutive 2-way SMT): 3 register ops with compile-time
++ * constants — AND, SHR 1, AND 0x5555...  No memory loads.
 + *
-+ *   Tier 2 (uniform stride-N 2-way SMT): 3 register ops with
-+ *   precomputed per-LLC shift and primary mask — AND, SHR N, AND.
-+ *   Two extra loads (poc_smt_shift, poc_primary_mask) from sd_share,
-+ *   but no write-path overhead.
++ * Tier 2 (uniform stride-N 2-way SMT): 3 register ops with
++ * precomputed per-LLC shift and primary mask — AND, SHR N, AND.
++ * Two extra loads (poc_smt_shift, poc_primary_mask) from sd_share,
++ * but no write-path overhead.
 + *
-+ *   Tier 3 (exotic: >2-way SMT or non-uniform topology): reads the
-+ *   separately-maintained poc_idle_cores_mask atomic64_t.  Write path
-+ *   maintains this bitmap on every idle transition.
++ * Tier 3 (exotic: >2-way SMT or non-uniform topology): reads the
++ * separately-maintained poc_idle_cores_mask atomic64_t.  Write path
++ * maintains this bitmap on every idle transition.
 + */
 +static __always_inline u64 poc_idle_core_mask(u64 cpu_mask,
 +	struct sched_domain_shared *sd_share)
@@ -1121,13 +1121,13 @@ index 0000000000..5bbd927828
 + * @counter: per-CPU round-robin counter value
 + *
 + * Improved RR with two techniques:
-+ *   1. Case-split by total:
-+ *      total=1: direct ctz
-+ *      total=2: interleave by counter LSB (guarantees non-repeat),
-+ *               single CTZ via cmov-selected source mask
-+ *      total>=3: golden-ratio scramble + Lemire fastrange
-+ *   2. Golden-ratio scrambling (counter * 0x9E3779B9) mapped via
-+ *      Lemire fastrange for pseudo-random uniform distribution.
++ * 1. Case-split by total:
++ * total=1: direct ctz
++ * total=2: interleave by counter LSB (guarantees non-repeat),
++ * single CTZ via cmov-selected source mask
++ * total>=3: golden-ratio scramble + Lemire fastrange
++ * 2. Golden-ratio scrambling (counter * 0x9E3779B9) mapped via
++ * Lemire fastrange for pseudo-random uniform distribution.
 + *
 + * eager_commit (unconditional) already prevents burst wake-ups from
 + * re-selecting the same CPU by clearing the bitmap bit at selection
@@ -1224,12 +1224,12 @@ index 0000000000..5bbd927828
 + *
 + * Three-tier computation matching poc_idle_core_mask():
 + *
-+ *   Tier 1 (consecutive): 3ULL << (bit & ~1) — shift only, zero loads.
++ * Tier 1 (consecutive): 3ULL << (bit & ~1) — shift only, zero loads.
 + *
-+ *   Tier 2 (uniform stride-N): determine sibling via poc_smt_shift
-+ *   and poc_primary_mask.  Avoids poc_smt_mask[] array lookup.
++ * Tier 2 (uniform stride-N): determine sibling via poc_smt_shift
++ * and poc_primary_mask.  Avoids poc_smt_mask[] array lookup.
 + *
-+ *   Tier 3 (exotic): loads from pre-computed poc_smt_mask[] table.
++ * Tier 3 (exotic): loads from pre-computed poc_smt_mask[] table.
 + */
 +static __always_inline u64 poc_smt_sibling_mask(int bit,
 +	struct sched_domain_shared *sd_share)
@@ -1360,7 +1360,7 @@ index 0000000000..5bbd927828
 +/*
 + * select_idle_cpu_poc - Fast idle CPU selector (atomic64 bitmap path)
 + * @target: CPU chosen by wake_affine (Level 1 preferred CPU;
-+ *          search origin for L2/L3/L5/L6)
++ * search origin for L2/L3/L5/L6)
 + * @prev: task's previous CPU (Level 4 cache locality preference)
 + * @recent: task's recent_used_cpu (-1 if none; pre-filtered by caller)
 + * @sync: 1 if synchronous wakeup (Level 4s: waker yields CPU)
@@ -1369,40 +1369,40 @@ index 0000000000..5bbd927828
 + *
 + * Two operating modes (sysctl kernel.sched_poc_smt_fallback):
 + *
-+ *   smt_fallback=0 (default): POC handles all idle CPU
-+ *   selection itself, including SMT siblings.  Prioritizes
-+ *   prev's SMT sibling for cache locality.  Uses CFS's
-+ *   nr_idle_scan (SIS_UTIL) to gate Level 5/6 under overload.
++ * smt_fallback=0 (default): POC handles all idle CPU
++ * selection itself, including SMT siblings.  Prioritizes
++ * prev's SMT sibling for cache locality.  Uses CFS's
++ * nr_idle_scan (SIS_UTIL) to gate Level 5/6 under overload.
 + *
-+ *   smt_fallback=1: Bails out to CFS when has_idle_cores is
-+ *   false.  CFS handles SMT sibling selection via
-+ *   select_idle_smt(prev) and nr_idle_scan-limited
-+ *   select_idle_cpu().
++ * smt_fallback=1: Bails out to CFS when has_idle_cores is
++ * false.  CFS handles SMT sibling selection via
++ * select_idle_smt(prev) and nr_idle_scan-limited
++ * select_idle_cpu().
 + *
 + * Selection levels:
 + *
-+ *   Level 0:   Saturation check -- no idle CPUs → return -1
-+ *              (smt_fallback: also when has_idle_cores == false)
-+ *   Level 1r:  Recent's core is fully idle → return recent (!early_select)
-+ *   Level 1s:  Target CPU idle in bitmap → return target (L1/TLB affinity)
-+ *   Level 1t:  Target CPU's core is fully idle → return target
-+ *   Level 1p:  Prev's core is fully idle → return prev (prev != target)
-+ *   --- core_mask != 0: search idle-core bitmap ---
-+ *   Level 2:   Idle core in L2 cluster (CTZ)
-+ *   Level 3:   Idle core across LLC (RR PTSELECT)
-+ *   --- core_mask == 0: search idle-CPU bitmap ---
-+ *   Level 4s:  sync + target CPU idle (waker frees core)
-+ *   Level 4p:  Prev's SMT sibling (cache locality)
-+ *   Level 4t:  Target's SMT sibling
-+ *   Level 4r:  Recent's SMT sibling (warm cache, always)
-+ *   [SIS_UTIL gate: nr_idle_scan == 0 → return -2]
-+ *   Level 5:   Idle CPU in L2 cluster (CTZ)
-+ *   Level 6:   Idle CPU across LLC (RR PTSELECT)
++ * Level 0:   Saturation check -- no idle CPUs → return -1
++ * (smt_fallback: also when has_idle_cores == false)
++ * Level 1r:  Recent's core is fully idle → return recent (!early_select)
++ * Level 1s:  Target CPU idle in bitmap → return target (L1/TLB affinity)
++ * Level 1t:  Target CPU's core is fully idle → return target
++ * Level 1p:  Prev's core is fully idle → return prev (prev != target)
++ * --- core_mask != 0: search idle-core bitmap ---
++ * Level 2:   Idle core in L2 cluster (CTZ)
++ * Level 3:   Idle core across LLC (RR PTSELECT)
++ * --- core_mask == 0: search idle-CPU bitmap ---
++ * Level 4s:  sync + target CPU idle (waker frees core)
++ * Level 4p:  Prev's SMT sibling (cache locality)
++ * Level 4t:  Target's SMT sibling
++ * Level 4r:  Recent's SMT sibling (warm cache, always)
++ * [SIS_UTIL gate: nr_idle_scan == 0 → return -2]
++ * Level 5:   Idle CPU in L2 cluster (CTZ)
++ * Level 6:   Idle CPU across LLC (RR PTSELECT)
 + *
 + * Non-SMT: Level 1r → 1t → 1p → Level 2 → Level 3 (core = CPU).
 + *
 + * Returns: idle CPU number if found, -1 if not found (CFS may retry),
-+ *          -2 if SIS_UTIL overload (caller should skip CFS)
++ * -2 if SIS_UTIL overload (caller should skip CFS)
 + */
 +static __always_inline int select_idle_cpu_poc(int target, int prev,
 +				int recent, int sync,
@@ -2207,17 +2207,13 @@ diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
 index adfb6e3409..c5676f37a1 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1130,6 +1130,9 @@ struct rq {
- #endif /* CONFIG_NO_HZ_COMMON */
- 
+@@ -1136,2 +1136,5 @@
  	unsigned int		ttwu_pending;
 +#ifdef CONFIG_SCHED_POC_SELECTOR
 +	unsigned int		poc_idle_committed;
 +#endif
  	u64			nr_switches;
- 
- #ifdef CONFIG_UCLAMP_TASK
-@@ -2192,6 +2195,112 @@ static inline struct task_group *task_group(struct task_struct *p)
+@@ -2197,6 +2200,112 @@ static inline struct task_group *task_group(struct task_struct *p)
  
  #endif /* !CONFIG_CGROUP_SCHED */
  
@@ -2330,7 +2326,7 @@ index adfb6e3409..c5676f37a1 100644
  static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
  {
  	set_task_rq(p, cpu);
-@@ -3305,6 +3410,7 @@ extern void nohz_run_idle_balance(int cpu);
+@@ -3134,6 +3243,7 @@ extern void nohz_run_idle_balance(int cpu);
  static inline void nohz_run_idle_balance(int cpu) { }
  #endif
  
@@ -2342,7 +2338,7 @@ diff --git a/kernel/sched/topology.c b/kernel/sched/topology.c
 index 444bdfdab7..510b96abcd 100644
 --- a/kernel/sched/topology.c
 +++ b/kernel/sched/topology.c
-@@ -1727,6 +1727,232 @@ sd_init(struct sched_domain_topology_level *tl,
+@@ -1717,6 +1717,232 @@ sd_init(struct sched_domain_topology_level *tl,
  		sd->shared = *per_cpu_ptr(sdd->sds, sd_id);
  		atomic_inc(&sd->shared->ref);
  		atomic_set(&sd->shared->nr_busy_cpus, sd_weight);
@@ -2426,19 +2422,19 @@ index 444bdfdab7..510b96abcd 100644
 +		/*
 +		 * Detect SMT topology and classify for poc_idle_core_mask():
 +		 *
-+		 *   Tier 1 (consecutive): uniform 2-way SMT, siblings at
-+		 *     consecutive bit positions (e.g., 0,1 / 2,3).
-+		 *     Uses compile-time constants: shift=1, mask=0x5555...
++		 * Tier 1 (consecutive): uniform 2-way SMT, siblings at
++		 * consecutive bit positions (e.g., 0,1 / 2,3).
++		 * Uses compile-time constants: shift=1, mask=0x5555...
 +		 *
-+		 *   Tier 2 (uniform stride-N): uniform 2-way SMT with
-+		 *     constant stride between siblings (e.g., Intel Xeon
-+		 *     stride-8: CPU 0,8 / 1,9 / ...).  Uses precomputed
-+		 *     poc_smt_shift and poc_primary_mask for read-time
-+		 *     derivation without write-path overhead.
++		 * Tier 2 (uniform stride-N): uniform 2-way SMT with
++		 * constant stride between siblings (e.g., Intel Xeon
++		 * stride-8: CPU 0,8 / 1,9 / ...).  Uses precomputed
++		 * poc_smt_shift and poc_primary_mask for read-time
++		 * derivation without write-path overhead.
 +		 *
-+		 *   Tier 3 (exotic): >2-way SMT, non-uniform topology,
-+		 *     or mixed SMT ways.  Falls back to write-time
-+		 *     maintenance of poc_idle_cores_mask atomic64_t.
++		 * Tier 3 (exotic): >2-way SMT, non-uniform topology,
++		 * or mixed SMT ways.  Falls back to write-time
++		 * maintenance of poc_idle_cores_mask atomic64_t.
 +		 *
 +		 * On pure non-SMT systems, the key values are irrelevant
 +		 * because sched_smt_active() gates all SMT paths.
