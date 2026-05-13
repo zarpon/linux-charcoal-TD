@@ -74,7 +74,7 @@ jobs:
             charcoal chown -R nobody /project
 
           docker run --rm \
-            -e MAKEFLAGS="-j3" \
+            -e MAKEFLAGS="-j$(nproc)" \
             -v ${PWD}:/project \
             charcoal sudo -u nobody makepkg -Ccf
 
