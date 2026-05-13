@@ -14,7 +14,7 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - Add [zram-ir](https://github.com/firelzrd/zram-ir)
 - Add [kcompressd-unofficial](https://github.com/firelzrd/kcompressd-unofficial)
 
-- [Add poc selector] (https://github.com/firelzrd/poc-selector)
+- Add [poc selectors](https://github.com/firelzrd/poc-selector)
 - Switch default DRM scheduling policy to round-robin
 - Optimize kernel with -O3 (from tkg)
 - Optimize for Zen 2 (from Gentoo)
