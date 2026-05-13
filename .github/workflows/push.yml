@@ -38,7 +38,7 @@ jobs:
       - name: Optimize VM parameters
         run: |
           sudo sysctl -w vm.page-cluster=0
-          sudo sysctl -w vm.swappiness=180
+          sudo sysctl -w vm.swappiness=100
 
       - name: Checkout
         uses: actions/checkout@v4
