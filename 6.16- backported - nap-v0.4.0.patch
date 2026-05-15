@@ -1,7 +1,7 @@
 From 1d2e8272f288fecce3fd7f762fb8c628ed04b7fe Mon Sep 17 00:00:00 2001
 From: Masahito S <firelzrd@gmail.com>
 Date: Wed, 15 Apr 2026 08:37:01 +0900
-Subject: [PATCH] 6.18.3-nap-v0.4.0
+Subject: [PATCH] 6.16.12-nap-v0.4.0 (Backport)
 
 ---
  drivers/cpuidle/Kconfig                     |  17 +
@@ -224,11 +224,11 @@ index 0000000000..a88de5591a
 + * Cached wrapper around nap_find_min_valid_state().
 + *
 + * Invalidation triggers:
-+ *   1. latency_req changed since last cached value (immediate; PM QoS
-+ *      updates propagate on the next nap_select call).
-+ *   2. NAP_MIN_STATE_REFRESH_JIFFIES elapsed since last refresh
-+ *      (bounded staleness for sysfs-driven or runtime-driver state
-+ *      disable events, which are rare).
++ * 1. latency_req changed since last cached value (immediate; PM QoS
++ * updates propagate on the next nap_select call).
++ * 2. NAP_MIN_STATE_REFRESH_JIFFIES elapsed since last refresh
++ * (bounded staleness for sysfs-driven or runtime-driver state
++ * disable events, which are rare).
 + *
 + * Hot path cost when the cache is valid: ~5-7 cycles (one s64
 + * compare, one time_after() check, one conditional return).  The
@@ -793,7 +793,7 @@ index 0000000000..1059db983b
 + * Neural network weight structure for an 8→8→1 MLP (scalar regression).
 + *
 + * The NN outputs a single log2 correction factor applied to sleep_length:
-+ *   effective_sleep = exp2(log2(sleep_length) + nn_output)
++ * effective_sleep = exp2(log2(sleep_length) + nn_output)
 + * State selection is then deterministic: pick the deepest state whose
 + * cost (target_residency + exit_latency) ≤ effective_sleep.
 + *
@@ -1002,8 +1002,8 @@ index 0000000000..1059db983b
 +	 * hidden_out[], features_f32[] are written with aligned SIMD
 +	 * stores in nap_nn_forward_{sse2,avx2}() and
 +	 * nap_extract_features():
-+	 *   SSE2:    movaps  (16-byte aligned)
-+	 *   AVX2:    vmovaps (32-byte aligned)
++	 * SSE2:    movaps  (16-byte aligned)
++	 * AVX2:    vmovaps (32-byte aligned)
 +	 * Without __aligned(64), the natural struct offset would be
 +	 * only 4-byte aligned, causing #GP faults in the idle task.
 +	 */
@@ -1242,17 +1242,17 @@ index 0000000000..482a06a5d0
 +	 * MoE expert boundaries — 3-way split.
 +	 *
 +	 * Expert 0 (short): tick-bound idles where measured residency
-+	 *   is dominated by the next tick rather than the workload's
-+	 *   true idle duration.  Boundary: log2(TICK_NSEC).
++	 * is dominated by the next tick rather than the workload's
++	 * true idle duration.  Boundary: log2(TICK_NSEC).
 +	 *
 +	 * Expert 1 (long): nohz idles in intermediate C-states.
 +	 *
 +	 * Expert 2 (deep): idles targeting the deepest C-state.
-+	 *   The deepest state often has qualitatively different
-+	 *   residency characteristics (package C-state, longer
-+	 *   exit latency, power-gated domains) that warrant a
-+	 *   dedicated expert to avoid gradient interference with
-+	 *   intermediate states.
++	 * The deepest state often has qualitatively different
++	 * residency characteristics (package C-state, longer
++	 * exit latency, power-gated domains) that warrant a
++	 * dedicated expert to avoid gradient interference with
++	 * intermediate states.
 +	 *
 +	 * Safety: with only 2 C-states (+ POLL), expert_deep is
 +	 * placed equal to expert_mid so the deep expert is never
@@ -1392,14 +1392,14 @@ index 0000000000..482a06a5d0
 +/*
 + * Extract 8 input features for the MLP.
 + *
-+ *   [0] log2(sleep_length)           — next timer event
-+ *   [1] log2(last_residency)         — actual duration of last idle
-+ *   [2] log_hist avg                 — average recent idle duration
-+ *   [3] log_hist min                 — shortest recent idle
-+ *   [4] log_hist max                 — longest recent idle
-+ *   [5] signed log2(|pred_error|+1)  — prediction feedback
-+ *   [6] log2(busy_ns)               — pre-idle busy duration
-+ *   [7] log2(lat_req) - log2(deepest_lat) — PM QoS headroom
++ * [0] log2(sleep_length)           — next timer event
++ * [1] log2(last_residency)         — actual duration of last idle
++ * [2] log_hist avg                 — average recent idle duration
++ * [3] log_hist min                 — shortest recent idle
++ * [4] log_hist max                 — longest recent idle
++ * [5] signed log2(|pred_error|+1)  — prediction feedback
++ * [6] log2(busy_ns)               — pre-idle busy duration
++ * [7] log2(lat_req) - log2(deepest_lat) — PM QoS headroom
 + */
 +static void nap_extract_features(struct cpuidle_driver *drv,
 +				 struct cpuidle_device *dev,
@@ -1418,10 +1418,10 @@ index 0000000000..482a06a5d0
 +
 +	/*
 +	 * SSE log2 batch: 4 values in one fast_log2f_sse call.
-+	 *   [0] sleep_length   → out[0]
-+	 *   [1] last_residency → out[1], also stored to log_history
-+	 *   [2] busy_ns        → out[6]
-+	 *   [3] |pred_error_us| + 1 → out[5] (sign restored after)
++	 * [0] sleep_length   → out[0]
++	 * [1] last_residency → out[1], also stored to log_history
++	 * [2] busy_ns        → out[6]
++	 * [3] |pred_error_us| + 1 → out[5] (sign restored after)
 +	 */
 +	{
 +		float err_f = (float)(d->last_prediction_error / 1000);
@@ -1486,7 +1486,7 @@ index 0000000000..482a06a5d0
 + *
 + * Called within kernel_fpu_begin()/kernel_fpu_end().
 + * Returns: selected idle state index (>= 0), or -1 to fall back
-+ *          to the integer heuristic.
++ * to the integer heuristic.
 + * ================================================================ */
 +
 +int nap_fpu_select(struct cpuidle_driver *drv,
@@ -1919,4 +1919,3 @@ index 0000000000..a9fffb3b98
 +}
 -- 
 2.34.1
-
