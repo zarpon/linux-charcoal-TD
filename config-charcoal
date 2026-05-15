@@ -26,7 +26,6 @@ CONFIG_ATH11K_TRACING=n
 CONFIG_NTSYNC=y
 
 # Enable LTO
-
 CONFIG_LTO_CLANG_FULL=y
 
 # CONFIG_LTO_CLANG_THIN=n
@@ -36,6 +35,13 @@ CONFIG_POLLY_CLANG=y
 
 # Ativa o seletor de CPUs ociosas de alta performance (POC)
 CONFIG_SCHED_POC_SELECTOR=y
+
+# Ativa o governador de CPUIdle baseado em Rede Neural (NAP)
+CONFIG_CPU_IDLE_GOV_NAP=y
+
+# (Opcional) Define o NAP como o governador padrão já no boot
+CONFIG_CPU_IDLE_DEFAULT_GOVERNOR="nap"
+
 
 # Change CPU IDLE goernor
 CONFIG_CPU_IDLE_GOV_LADDER=n
