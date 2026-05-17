@@ -1,5 +1,4 @@
 # Charcoal SteamOS Kernel
-[![build](https://github.com/V10lator/linux-charcoal/actions/workflows/push.yml/badge.svg)](https://github.com/V10lator/linux-charcoal/actions)
 
 Works on Steam Deck and possibly other AMD based handheld PCs.
 
@@ -37,7 +36,7 @@ Works on Steam Deck and possibly other AMD based handheld PCs.
 - ~~Update zstd (from CachyOS)~~ No longer needed for modern kernels
 
 # Install
-Download the [latest release](https://github.com/V10lator/linux-charcoal/releases/latest) and run the following on your Steam Deck:
+Download the last release and run the following on your Steam Deck:
 ```
 cd ~/Downloads
 sudo steamos-readonly disable
