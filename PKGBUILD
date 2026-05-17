@@ -58,7 +58,6 @@ source=(
   vangogh_higher_max_power_limit.patch
   drm_sched_rr_default.patch
   re-swappiness-v1.2_backported.patch
-  0001-linux6.16.12-zram-ir-1.2.patch
   ryzen_smu.diff
   xpad-noone.diff
   "c23.patch::https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/patch/?id=d70f79fef65810faf64dbae1f3a1b5623cdb2345"
@@ -93,6 +92,7 @@ source=(
   "git+https://github.com/dlundqvist/xone.git#tag=v0.5.8"
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
+  "https://raw.githubusercontent.com/firelzrd/zram-ir/refs/heads/main/patches/0001-linux6.16.0-zram-ir-1.2.patch"
    6.16-poc-selector-v2.6.1.patch 
    6.16-nap-v0.4.0.patch
 )
@@ -107,7 +107,6 @@ sha256sums=('SKIP'
             '1c49146dc5878bfab32b331d11cb66d493670bbe590ff07c2050305911c281c3'
             '6e510d8b74798944b5cb84ac775156831410c853c8a03c2a3f79e9bc7be9c2e2'
             '35dd98092d6900962dd98fa28fbccbdff07e67eafed5088fecac67b1cbfdfdd8'
-            'e58e21581a509d0617591311b1d9ab8669f46046f2949e42d6149b0bb11ead87'
             '4bcf61814a6daac8f72c46a425b9ce88c07f6bd95f6a0ac287d73dfd4d5da60b'
             'ff3bbe78d6f072d57f567878e870956242ee78ccddd258b1ec2e4729621138fe'
             'ab6b17b1f9cc4b322f0050d2e8cede75e44e069854e9bdc22068356530d628e8'
@@ -142,6 +141,7 @@ sha256sums=('SKIP'
             '7ba61ccf2ddb508d6adb30906d3d57dc0ce1bc64a6d1a41796eb94a8584ea63b'
             '1055bbbd32985017f4501d375648873bd598db084177d302aeeade56b47920e1'
             '26b3a811d38471a42229fa037cb6d2bb5ff78f19f45a17c7f263339ee67769a7'
+            'SKIP'
             'SKIP' 
             'SKIP')
 
