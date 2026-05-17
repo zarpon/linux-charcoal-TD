@@ -1,9 +1,11 @@
 From 1e6c9a4ebb514776f9a3f7d9771c3ce57890a9fe Mon Sep 17 00:00:00 2001
 From: Masahito S <firelzrd@gmail.com>
 Date: Sun, 17 May 2026 11:42:38 +0900
-Subject: [PATCH] 6.16-backport: POC Selector v2.6.1r2 (fixed sched.h hunk)
+Subject: [PATCH] 6.16-backport: POC Selector v2.6.1r2 (robust sched.h)
 
-Backported to kernel 6.16: adjusted offsets in sched.h to match 6.16 layout.
+Backported to kernel 6.16: removed _cpuslocked, guard(rcu) replaced
+with explicit rcu_read_lock/unlock, sched_balance_find_dst_cpu -> find_idlest_cpu.
+Uses larger context hunks to survive other out-of-tree patches.
 
 Signed-off-by: Masahito S <firelzrd@gmail.com>
 ---
