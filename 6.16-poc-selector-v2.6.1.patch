@@ -1,12 +1,11 @@
 From 1e6c9a4ebb514776f9a3f7d9771c3ce57890a9fe Mon Sep 17 00:00:00 2001
 From: Masahito S <firelzrd@gmail.com>
 Date: Sun, 17 May 2026 11:42:38 +0900
-Subject: [PATCH] 6.16-backport: POC Selector v2.6.1r2
+Subject: [PATCH] 6.16-backport: POC Selector v2.6.1r2 (fixed sched.h hunk)
 
-Backported to kernel 6.16: removed _cpuslocked from static_branch_*,
-replaced guard(rcu) with explicit rcu_read_lock/unlock, and changed
-sched_balance_find_dst_cpu to find_idlest_cpu.
+Backported to kernel 6.16: adjusted offsets in sched.h to match 6.16 layout.
 
+Signed-off-by: Masahito S <firelzrd@gmail.com>
 ---
  include/linux/sched/topology.h |  50 +-
  init/Kconfig                   |  13 +
@@ -2240,7 +2239,7 @@ index adfb6e3409..c5676f37a1 100644
  	u64			nr_switches;
  
  #ifdef CONFIG_UCLAMP_TASK
-@@ -2197,6 +2200,112 @@ static inline struct task_group *task_group(struct task_struct *p)
+@@ -2192,6 +2195,112 @@ static inline struct task_group *task_group(struct task_struct *p)
  
  #endif /* !CONFIG_CGROUP_SCHED */
  
@@ -2353,7 +2352,7 @@ index adfb6e3409..c5676f37a1 100644
  static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
  {
  	set_task_rq(p, cpu);
-@@ -3134,6 +3243,7 @@ extern void nohz_run_idle_balance(int cpu);
+@@ -3305,6 +3414,7 @@ extern void nohz_run_idle_balance(int cpu);
  static inline void nohz_run_idle_balance(int cpu) { }
  #endif
  
