@@ -1,24 +1,18 @@
-From 1e6c9a4ebb514776f9a3f7d9771c3ce57890a9fe Mon Sep 17 00:00:00 2001
+From 854c284516887b6bdf6a3a3f2507ce873151a4d5 Mon Sep 17 00:00:00 2001
 From: Masahito S <firelzrd@gmail.com>
-Date: Sun, 17 May 2026 11:42:38 +0900
-Subject: [PATCH] 6.16-backport: POC Selector v2.6.1r2 (robust sched.h)
+Date: Mon, 27 Apr 2026 11:07:36 +0900
+Subject: [PATCH] 6.18.3-poc-selector-v2.6.1
 
-Backported to kernel 6.16: removed _cpuslocked, guard(rcu) replaced
-with explicit rcu_read_lock/unlock, sched_balance_find_dst_cpu -> find_idlest_cpu.
-Uses larger context hunks to survive other out-of-tree patches.
-Fixes anchor for sched.h to coexist with BORE scheduler.
-
-Signed-off-by: Masahito S <firelzrd@gmail.com>
 ---
- include/linux/sched/topology.h |  50 +-
- init/Kconfig                   |  13 +
- kernel/sched/ext.c             |   7 +
- kernel/sched/fair.c            | 164 ++-
- kernel/sched/idle.c            |  10 +
- kernel/sched/poc_selector.c    | 1801 ++++++++++++++++++++++++++++++++
- kernel/sched/sched.h           | 110 ++
- kernel/sched/topology.c        | 226 ++++
- 8 files changed, 2343 insertions(+), 38 deletions(-)
+ include/linux/sched/topology.h |   50 +-
+ init/Kconfig                   |   13 +
+ kernel/sched/ext.c             |    7 +
+ kernel/sched/fair.c            |  164 ++-
+ kernel/sched/idle.c            |   10 +
+ kernel/sched/poc_selector.c    | 1788 ++++++++++++++++++++++++++++++++
+ kernel/sched/sched.h           |  110 ++
+ kernel/sched/topology.c        |  226 ++++
+ 8 files changed, 2330 insertions(+), 38 deletions(-)
  create mode 100644 kernel/sched/poc_selector.c
 
 diff --git a/include/linux/sched/topology.h b/include/linux/sched/topology.h
@@ -177,6 +171,11 @@ index 967ca52fb2..1afd1838f5 100644
  	return false;
  }
  
++static inline bool is_idle_core(int cpu)
++{
++	return (available_idle_cpu(cpu) || sched_idle_cpu(cpu));
++}
++
  static inline int select_idle_core(struct task_struct *p, int core, struct cpumask *cpus, int *idle_cpu)
  {
  	return __select_idle_cpu(core, p);
@@ -374,7 +373,7 @@ index 967ca52fb2..1afd1838f5 100644
  }
  
 @@ -8628,7 +8720,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int wake_flags)
- 		new_cpu = find_idlest_cpu(sd, p, cpu, prev_cpu, sd_flag);
+ 		new_cpu = sched_balance_find_dst_cpu(sd, p, cpu, prev_cpu, sd_flag);
  	} else if (wake_flags & WF_TTWU) { /* XXX always ? */
  		/* Fast path */
 -		new_cpu = select_idle_sibling(p, prev_cpu, new_cpu);
@@ -412,10 +411,10 @@ index c39b089d4f..3fffa1a43f 100644
  	 * be set, propagate it into PREEMPT_NEED_RESCHED.
 diff --git a/kernel/sched/poc_selector.c b/kernel/sched/poc_selector.c
 new file mode 100644
-index 0000000000..322d3ec0d6
+index 0000000000..5bbd927828
 --- /dev/null
 +++ b/kernel/sched/poc_selector.c
-@@ -0,0 +1,1801 @@
+@@ -0,0 +1,1788 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Piece-Of-Cake (POC) CPU Selector
@@ -435,19 +434,6 @@ index 0000000000..322d3ec0d6
 + *
 + * Acknowledgements:
 + * This work is heavily inspired by RitzDaCat's scx_cake scheduler.
-+ *
-+ * The select_idle_sibling() restructuring on which the POC fast
-+ * path depends (is_idle_core() helper, @sync parameter, hoisting
-+ * the recent_used_cpu check to the function top, switching the
-+ * target fast-return to is_idle_core()) is adapted from:
-+ *
-+ * Andrea Righi, Mario Roy, and Eric Naim
-+ * ("sched/fair: Prefer the previous cpu for wakeup")
-+ *
-+ * - Andrea Righi: is_idle_core() helper and idle-core
-+ * target selection in select_idle_sibling()
-+ * - Mario Roy: prev-cpu preference and recent_used_cpu
-+ * hoisting with idle-core check
 + *
 + * Special thanks to the algorithm inventors whose research enabled
 + * the O(1) techniques used in this implementation:
@@ -1031,13 +1017,11 @@ index 0000000000..322d3ec0d6
 +			!state && READ_ONCE(rq->poc_idle_committed))
 +		return;
 +
-+	rcu_read_lock();
++	guard(rcu)();
 +	struct sched_domain_shared *sd_share =
 +		rcu_dereference(per_cpu(sd_llc_shared, cpu));
-+	if (!sd_share || !sd_share->poc_fast_eligible) {
-+		rcu_read_unlock();
++	if (!sd_share || !sd_share->poc_fast_eligible)
 +		return;
-+	}
 +
 +	int bit = cpu - sd_share->poc_cpu_base;
 +	u64 bit_mask = 1ULL << bit;
@@ -1063,7 +1047,7 @@ index 0000000000..322d3ec0d6
 +	if (sched_smt_active()) {
 +		/* Tier 1 & 2: read-time derivation, no write-path cost */
 +		if (static_branch_likely(&sched_poc_smt_uniform))
-+			goto out_unlock;
++			return;
 +		/*
 +		 * Tier 3 (exotic SMT): maintain separate cores state.
 +		 * Check whether all SMT siblings are idle.
@@ -1116,9 +1100,7 @@ index 0000000000..322d3ec0d6
 +			}
 +		}
 +	}
-+out_unlock:
 +#endif /* CONFIG_SCHED_SMT */
-+	rcu_read_unlock();
 +}
 +
 +/**************************************************************
@@ -1658,10 +1640,10 @@ index 0000000000..322d3ec0d6
 +		return;
 +
 +	if (want) {
-+		static_branch_enable(&poc_selector_active);
++		static_branch_enable_cpuslocked(&poc_selector_active);
 +		poc_resync_idle_state();
 +	} else {
-+		static_branch_disable(&poc_selector_active);
++		static_branch_disable_cpuslocked(&poc_selector_active);
 +	}
 +}
 +#endif /* CONFIG_SYSCTL || CONFIG_SCHED_CLASS_EXT */
@@ -1886,9 +1868,9 @@ index 0000000000..322d3ec0d6
 +	if (!ret && write) {
 +		cpus_read_lock();
 +		if (val)
-+			static_branch_enable(&sched_poc_lockless_bitmap);
++			static_branch_enable_cpuslocked(&sched_poc_lockless_bitmap);
 +		else
-+			static_branch_disable(&sched_poc_lockless_bitmap);
++			static_branch_disable_cpuslocked(&sched_poc_lockless_bitmap);
 +		/*
 +		 * Resync the newly-active representation so readers see
 +		 * consistent state immediately after the mode switch.
@@ -2006,13 +1988,11 @@ index 0000000000..322d3ec0d6
 +	for_each_online_cpu(cpu) {
 +		struct sched_domain_shared *sd_share;
 +
-+		rcu_read_lock();
-+		sd_share = rcu_dereference(per_cpu(sd_llc_shared, cpu));
-+		if (sd_share && !sd_share->poc_fast_eligible) {
-+			rcu_read_unlock();
-+			return false;
++		scoped_guard(rcu) {
++			sd_share = rcu_dereference(per_cpu(sd_llc_shared, cpu));
++			if (sd_share && !sd_share->poc_fast_eligible)
++				return false;
 +		}
-+		rcu_read_unlock();
 +	}
 +	return true;
 +}
@@ -2224,15 +2204,16 @@ index 0000000000..322d3ec0d6
 +#endif /* CONFIG_SYSFS */
 +#endif /* CONFIG_SCHED_POC_SELECTOR */
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index adfb6e3409..f5b8c9e2d1 100644
+index adfb6e3409..c5676f37a1 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1018,1 +1018,4 @@ struct rq {
- 	unsigned int		nr_running;
+@@ -1136,2 +1136,5 @@
+ 	unsigned int		ttwu_pending;
 +#ifdef CONFIG_SCHED_POC_SELECTOR
 +	unsigned int		poc_idle_committed;
 +#endif
-@@ -2192,6 +2195,112 @@ static inline struct task_group *task_group(struct task_struct *p)
+ 	u64			nr_switches;
+@@ -2197,6 +2200,112 @@ static inline struct task_group *task_group(struct task_struct *p)
  
  #endif /* !CONFIG_CGROUP_SCHED */
  
@@ -2345,7 +2326,7 @@ index adfb6e3409..f5b8c9e2d1 100644
  static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
  {
  	set_task_rq(p, cpu);
-@@ -3305,6 +3414,7 @@ extern void nohz_run_idle_balance(int cpu);
+@@ -3134,6 +3243,7 @@ extern void nohz_run_idle_balance(int cpu);
  static inline void nohz_run_idle_balance(int cpu) { }
  #endif
  
@@ -2375,16 +2356,16 @@ index 444bdfdab7..510b96abcd 100644
 +			 * is not 64-aligned (e.g., Threadripper CCDs).
 +			 */
 +			if (sd_id & 63)
-+				static_branch_disable(&sched_poc_aligned);
++				static_branch_disable_cpuslocked(&sched_poc_aligned);
 +			/*
 +			 * Disable packed priority search if this LLC
 +			 * has more than 32 CPUs.
 +			 */
 +			if (range > 32)
-+				static_branch_disable(&sched_poc_packed);
++				static_branch_disable_cpuslocked(&sched_poc_packed);
 +		} else {
 +			sd->shared->poc_fast_eligible = false;
-+			static_branch_disable(&sched_poc_packed);
++			static_branch_disable_cpuslocked(&sched_poc_packed);
 +		}
 +		memset(sd->shared->poc_idle_cpus, 0,
 +		       sizeof(sd->shared->poc_idle_cpus));
@@ -2501,15 +2482,18 @@ index 444bdfdab7..510b96abcd 100644
 +			}
 +
 +			if (!all_consecutive)
-+				static_branch_disable(&sched_poc_smt_consecutive);
++				static_branch_disable_cpuslocked(
++					&sched_poc_smt_consecutive);
 +
 +			if (all_2way && uniform_stride > 0) {
 +				sd->shared->poc_smt_shift =
 +					(u8)uniform_stride;
 +				sd->shared->poc_primary_mask = primary_mask;
 +			} else {
-+				static_branch_disable(&sched_poc_smt_consecutive);
-+				static_branch_disable(&sched_poc_smt_uniform);
++				static_branch_disable_cpuslocked(
++					&sched_poc_smt_consecutive);
++				static_branch_disable_cpuslocked(
++					&sched_poc_smt_uniform);
 +			}
 +		}
 +#endif /* CONFIG_SCHED_SMT */
@@ -2587,3 +2571,5 @@ index 444bdfdab7..510b96abcd 100644
  	}
  
  	sd->private = sdd;
+-- 
+2.34.1
