@@ -2229,13 +2229,13 @@ index 0000000000..322d3ec0d6
 +#endif /* CONFIG_SYSFS */
 +#endif /* CONFIG_SCHED_POC_SELECTOR */
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index adfb6e3409..c5676f37a1 100644
+index adfb6e3409..f5b8c9e2d1 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1020,6 +1020,9 @@ struct rq {
+@@ -1018,6 +1018,9 @@ struct rq {
+ 	/* runqueue lock: */
  	raw_spinlock_t		__lock;
  	unsigned int		nr_running;
- 
 +#ifdef CONFIG_SCHED_POC_SELECTOR
 +	unsigned int		poc_idle_committed;
 +#endif
