@@ -6,8 +6,9 @@ pkgbase=linux-charcoal-616
 _nepbase=linux-neptune-616
 _tag=6.16.12.valve21-1
 _ver=1
-pkgver=${_tag//-/.}.cc$_ver
+pkgver=${_tag%-*}.cc$_ver
 pkgrel=1
+_srcname=${_nepbase}-${_tag}
 pkgdesc='Linux'
 url="https://gitlab.steamos.cloud/jupiter/linux-integration/-/tree/$_tag"
 arch=(x86_64)
@@ -47,7 +48,7 @@ options=(
 _srcname=archlinux-linux-charcoal
 _xpadneo_version=0.10.2
 source=(
-  "$_srcname::https://steamdeck-packages.steamos.cloud/archlinux-mirror/sources/jupiter-main/${_nepbase}-${_tag}.src.tar.gz"
+  "$_srcname::https://steamdeck-packages.steamos.cloud/archlinux-mirror/sources/jupiter-main/${_srcname}.src.tar.gz"
   config          # Upstream Arch Linux kernel configuration file, DO NOT EDIT!!!
   config-neptune  # Jupiter: the neptune kernel fragment file (overrides 'config' above)
   config-charcoal # Charcoal: The Charcoal kernel fragment file
