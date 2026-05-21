@@ -5,6 +5,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+permissions:
+  contents: write
+  pull-requests: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
