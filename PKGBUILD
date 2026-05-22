@@ -4,7 +4,7 @@
 
 pkgbase=linux-charcoal-618
 _nepbase=linux-neptune-618
-_tag=6.18.28-valve1
+_tag=6.18.32-valve1
 _ver=1
 pkgver=${_tag//-/.}.cc$_ver
 pkgrel=1
@@ -59,7 +59,6 @@ source=(
   drm_sched_rr_default.patch
   ryzen_smu.diff
   xpad-noone.diff
-  "https://raw.githubusercontent.com/firelzrd/kcompressd-unofficial/refs/heads/main/patches/stable/0001-linux6.18-kcompressd-unofficial-0.5.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0002-clear-patches.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.11/0007-v6.11-fsync1_via_futex_waitv.patch"
   "https://raw.githubusercontent.com/Frogging-Family/linux-tkg/d837d80398a62ea884caabad36530093f9711d49/linux-tkg-patches/6.18/0013-optimize_harder_O3.patch"
@@ -86,11 +85,11 @@ source=(
   "git+https://github.com/dlundqvist/xone.git#tag=v0.5.8"
   "git+https://github.com/forkymcforkface/xpad-noone.git#commit=8e903676dd9514c07ce5e06e43c5f7d8cc51cb7d"
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
-  "https://raw.githubusercontent.com/firelzrd/bore-scheduler/refs/heads/main/patches/additions/0002-sched-ext-coexistence-fix.patch"
   "https://raw.githubusercontent.com/firelzrd/bore-scheduler/refs/heads/main/patches/stable/linux-6.18-bore/0001-linux6.18.22-bore-6.6.3.patch"
+  "https://raw.githubusercontent.com/firelzrd/bore-scheduler/refs/heads/main/patches/additions/0002-sched-ext-coexistence-fix.patch" 
   "https://raw.githubusercontent.com/firelzrd/poc-selector/refs/heads/main/patches/stable/0001-6.18.3-poc-selector-v2.6.1.patch"
   "https://raw.githubusercontent.com/firelzrd/nap/refs/heads/main/patches/stable/0001-6.18.3-nap-v0.4.0.patch"
-   6.18.13-Re-swappiness-v1.2.patch 
+  "https://raw.githubusercontent.com/firelzrd/lru_marie/refs/heads/main/patches/test/0001-linux6.18.22-lru_marie-0.1.5.patch"  
    0001-linux6.18-zram-ir-1.2-backport.patch
    ) 
 sha256sums=(
@@ -105,7 +104,6 @@ sha256sums=(
   'SKIP'
   'SKIP'
   'SKIP'
-  'SKIP' 
   'SKIP'
   '2c9843a51e8dd4b41f7620dcc4bf3677c7867d922073202c095324fb1443cfa5'
   '9df628fd530950e37d31da854cb314d536f33c83935adf5c47e71266a55f7004'
@@ -138,7 +136,7 @@ sha256sums=(
   'SKIP'
   'SKIP'
   'SKIP'
-  'SKIP' 
+  'SKIP'  
 )
 
 export KBUILD_BUILD_HOST=archlinux
