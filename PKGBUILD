@@ -87,7 +87,7 @@ source=(
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
   "https://raw.githubusercontent.com/firelzrd/bore-scheduler/refs/heads/main/patches/stable/linux-6.18-bore/0001-linux6.18.22-bore-6.6.3.patch"
   "https://raw.githubusercontent.com/firelzrd/bore-scheduler/refs/heads/main/patches/additions/0002-sched-ext-coexistence-fix.patch" 
-  "https://raw.githubusercontent.com/firelzrd/poc-selector/refs/heads/main/patches/stable/0001-6.18.3-poc-selector-v2.6.1.patch"
+  "https://raw.githubusercontent.com/firelzrd/poc-selector/refs/heads/main/patches/stable/0001-6.18.3-poc-selector-v2.6.1r2.patch"
   "https://raw.githubusercontent.com/firelzrd/nap/refs/heads/main/patches/stable/0001-6.18.3-nap-v0.4.0.patch"
   "https://raw.githubusercontent.com/firelzrd/lru_marie/refs/heads/main/patches/test/0001-linux6.18.22-lru_marie-0.1.5.patch"  
    0001-linux6.18-zram-ir-1.2-backport.patch
