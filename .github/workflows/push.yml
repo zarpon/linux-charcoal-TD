@@ -5,6 +5,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+permissions:
+  contents: write
+  pull-requests: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -38,7 +42,7 @@ jobs:
       - name: Optimize VM parameters
         run: |
           sudo sysctl -w vm.page-cluster=0
-          sudo sysctl -w vm.swappiness=100
+          sudo sysctl -w vm.swappiness=180
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,7 +78,7 @@ jobs:
             charcoal chown -R nobody /project
 
           docker run --rm \
-            -e MAKEFLAGS="-j$(nproc)" \
+            -e MAKEFLAGS="-j3" \
             -v ${PWD}:/project \
             charcoal sudo -u nobody makepkg -Ccf
 
