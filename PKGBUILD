@@ -96,7 +96,8 @@ source=(
    6.16-poc-selector-v2.6.1.patch 
    6.16-nap-v0.4.0.patch
 )
-sha256sums=('a69eea3b189ab64e65608140d6cd7c57823d1b39b361e876197eec1b4d1db957'
+sha256sums=(
+            'SKIP'
             '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
             'd88eaf0f94bae470040e4882f334c05b1bb2ab0a99e4b7299aa0b2337810ab8d'
             'fd57213c524e24cd9c72e2fecd9b2005934b6099e209864e5a93eb03406fca21'
