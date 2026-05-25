@@ -1,7 +1,7 @@
 From a996485fcd064a82b55d6ff6beac3c6bdf3a34c8 Mon Sep 17 00:00:00 2001
 From: Masahito S <firelzrd@gmail.com>
 Date: Mon, 25 May 2026 16:25:41 +0900
-Subject: [PATCH] linux6.18.22-lru_marie-0.2.1
+Subject: [PATCH] linux6.16-lru_marie-0.2.1 (backported from 6.18.22)
 
 ---
  include/linux/lru_marie.h      |  441 ++++++
@@ -10261,4 +10261,4 @@ index 95b1179a14..3be780910c 100644
  	},
 -- 
 2.34.1
-
+```
