@@ -4,7 +4,7 @@
 
 pkgbase=linux-charcoal-616
 _nepbase=linux-neptune-616
-_tag=6.16.12-valve21
+_tag=6.16.12-valve22
 _ver=3
 pkgver=${_tag//-/.}.cc$_ver
 pkgrel=1
@@ -57,7 +57,6 @@ source=(
   vangogh_allow_higher_cpu_freq.patch
   vangogh_higher_max_power_limit.patch
   drm_sched_rr_default.patch
-  re-swappiness-v1.2_backported.patch
   0001-linux6.16.12-zram-ir-1.2.patch
   ryzen_smu.diff
   xpad-noone.diff
@@ -81,7 +80,6 @@ source=(
   "https://raw.githubusercontent.com/firelzrd/adios/d90faa7c84be86cd89a54acc610ed4cdf88347ac/patches/0002-Make-ADIOS-the-Default-I-O-scheduler.patch"
   "https://raw.githubusercontent.com/firelzrd/bore-scheduler/5cfd8ed4f9c3a0e58b1667ccc37a928278656044/patches/stable/linux-6.16-bore/0001-linux6.16.0-bore-6.5.2.patch"
   "https://raw.githubusercontent.com/firelzrd/bore-scheduler/69c9409354ad8be29280e97ceccb507d2c394be1/patches/additions/0002-sched-ext-coexistence-fix.patch"
-  "https://raw.githubusercontent.com/firelzrd/kcompressd-unofficial/1409979d5e7156a880395c374b812f1012bc216f/patches/stable/0001-linux6.16-kcompressd-unofficial-0.5.patch"
   "https://github.com/zen-kernel/zen-kernel/commit/f6ed65cd7bda9cb6009c6a12efd7c4311df31936.patch"
   "https://github.com/zen-kernel/zen-kernel/commit/cab7ea1a4ef6685a133ae121ca27098b9dd31287.patch"
   "https://github.com/zen-kernel/zen-kernel/commit/fb5c79d96cc87e4778ac0f2a53bc7c0c23078c54.patch"
@@ -95,8 +93,10 @@ source=(
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
    6.16-poc-selector-v2.6.1.patch 
    6.16-nap-v0.4.0.patch
+   6.16-lru_marie-0.2.1.patch
 )
-sha256sums=('a69eea3b189ab64e65608140d6cd7c57823d1b39b361e876197eec1b4d1db957'
+sha256sums=(
+            'SKIP'
             '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
             'd88eaf0f94bae470040e4882f334c05b1bb2ab0a99e4b7299aa0b2337810ab8d'
             'fd57213c524e24cd9c72e2fecd9b2005934b6099e209864e5a93eb03406fca21'
@@ -106,7 +106,6 @@ sha256sums=('a69eea3b189ab64e65608140d6cd7c57823d1b39b361e876197eec1b4d1db957'
             '375c8e17daf9e60bc6c211dd73f0c67ec241bd40a83d812a08eeb42aab6128d9'
             '1c49146dc5878bfab32b331d11cb66d493670bbe590ff07c2050305911c281c3'
             '6e510d8b74798944b5cb84ac775156831410c853c8a03c2a3f79e9bc7be9c2e2'
-            '35dd98092d6900962dd98fa28fbccbdff07e67eafed5088fecac67b1cbfdfdd8'
             'e58e21581a509d0617591311b1d9ab8669f46046f2949e42d6149b0bb11ead87'
             '4bcf61814a6daac8f72c46a425b9ce88c07f6bd95f6a0ac287d73dfd4d5da60b'
             'ff3bbe78d6f072d57f567878e870956242ee78ccddd258b1ec2e4729621138fe'
@@ -130,7 +129,6 @@ sha256sums=('a69eea3b189ab64e65608140d6cd7c57823d1b39b361e876197eec1b4d1db957'
             '5ef2f14326a5fab8980d1ebb6734ece576f930c173b4980eb026513aa3b1b9d0'
             '99a66ba41a7c40746f770b28430598c655f42e09e1ce196b1f28c9f4d89f247c'
             'cdf138cdb94fcb4e2988bd7d2873a51522fdb7212ec314fde202facaf8210b5c'
-            '8064ca3dade0432476d372096e10fef523381d0c1fda8e07032062efd1045a57'
             'bc647f73ec860a0fe7d074c2377588816a616dc2a651b30d7b9cd168863a17c6'
             '5059762e54c8dbe4262d48eafb8d486a54244eec71da5d7b61fc0f5f1c5c2ea7'
             'f22c6983d496d9038fa0f4288ee6cbb5b46837fee5f644f4759e4c26dcdff262'
@@ -143,7 +141,8 @@ sha256sums=('a69eea3b189ab64e65608140d6cd7c57823d1b39b361e876197eec1b4d1db957'
             '1055bbbd32985017f4501d375648873bd598db084177d302aeeade56b47920e1'
             '26b3a811d38471a42229fa037cb6d2bb5ff78f19f45a17c7f263339ee67769a7'
             '14dabfb0452a3a817e8d809fb28eb7565512e95386d789c627b62baf136e001f'
-            '99d87a5c9cf47f257df81fabbabdcb9df02ff93c0c9caabf1bbd40d2e50fed6e')
+            '99d87a5c9cf47f257df81fabbabdcb9df02ff93c0c9caabf1bbd40d2e50fed6e'
+            'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
