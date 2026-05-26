@@ -1,15 +1,14 @@
 diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 1111111111..2222222222 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -40,6 +40,11 @@
+@@ -66,6 +66,11 @@
  #include <linux/freezer.h>
  #include <linux/memcontrol.h>
  #include <linux/lru_marie.h>
++
 +#if defined(CONFIG_LRU_MARIE) && defined(CONFIG_SWAP)
-+/* kcompmari thread function defined in mm/page_io.c */
 +extern int kcompmari(void *data);
 +#endif
++
  #include <linux/migrate.h>
  #include <linux/delayacct.h>
-
