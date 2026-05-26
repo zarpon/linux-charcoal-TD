@@ -93,7 +93,7 @@ source=(
   "git+https://github.com/atar-axis/xpadneo.git#tag=v$_xpadneo_version"
    6.16-poc-selector-v2.6.1.patch 
    6.16-nap-v0.4.0.patch
-   6.16-lru_marie-0.2.1.patch
+   6.16-lru_marie-0.2.2.patch
 )
 sha256sums=(
             'SKIP'
