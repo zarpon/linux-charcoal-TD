@@ -1,12 +1,3 @@
-From 0000000000000000000000000000000000000000 tue  19:44:00 2026
-From: jorgezarpon <jorgezarpon@msn.com>
-Date: Tue, 26 May 2026 19:46:00 +0000
-Subject: [PATCH] marie fix: declare kcompmari for vmscan
-
----
- mm/vmscan.c | 5 +++++
- 1 file changed, 5 insertions(+)
-
 diff --git a/mm/vmscan.c b/mm/vmscan.c
 index 1111111111..2222222222 100644
 --- a/mm/vmscan.c
@@ -22,5 +13,3 @@ index 1111111111..2222222222 100644
  #include <linux/migrate.h>
  #include <linux/delayacct.h>
 
--- 
-2.34.1
