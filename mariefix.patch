@@ -8,3 +8,15 @@
  #include <linux/lru_marie.h>
  #include <linux/migrate.h>
  #include <linux/delayacct.h>
+@@ -55,6 +56,12 @@
+ 
+ #include <asm/irq.h>
+ 
++#if defined(CONFIG_LRU_MARIE) && defined(CONFIG_SWAP)
++/* kcompmari thread function defined in mm/page_io.c */
++extern int kcompmari(void *data);
++#endif
++
+ /*
+  * swappiness
+  */
