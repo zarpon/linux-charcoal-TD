@@ -502,7 +502,7 @@ index 0000000000..3913fc90d5
 + */
 +
 +#endif /* _LINUX_LRU_MARIE_H */
- 
+
 diff --git a/include/linux/mm_inline.h b/include/linux/mm_inline.h
 index f6a2b2d200..d237c5d05b 100644
 --- a/include/linux/mm_inline.h
@@ -628,7 +628,7 @@ index f6a2b2d200..d237c5d05b 100644
  	if (lru_gen_del_folio(lruvec, folio, false))
  		return;
  
- 
+
 diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
 index 7fb7331c57..a2b3b317db 100644
 --- a/include/linux/mmzone.h
@@ -689,7 +689,7 @@ index 7fb7331c57..a2b3b317db 100644
  #ifdef CONFIG_COMPACTION
  	int kcompactd_max_order;
  	enum zone_type kcompactd_highest_zoneidx;
- 
+
 diff --git a/include/linux/swap.h b/include/linux/swap.h
 index e818fbade1..e7b8b27ed6 100644
 --- a/include/linux/swap.h
@@ -719,7 +719,7 @@ index e818fbade1..e7b8b27ed6 100644
  /* Swap 50% full? Release swapcache more aggressively.. */
  static inline bool vm_swap_full(void)
  {
- 
+
 diff --git a/mm/Kconfig b/mm/Kconfig
 index 76001e9ba0..86ca3a652e 100644
 --- a/mm/Kconfig
@@ -761,7 +761,7 @@ index 76001e9ba0..86ca3a652e 100644
  config ARCH_SUPPORTS_PER_VMA_LOCK
         def_bool n
  
- 
+
 diff --git a/mm/Makefile b/mm/Makefile
 index 21abb33535..7d40460c7d 100644
 --- a/mm/Makefile
@@ -774,7 +774,7 @@ index 21abb33535..7d40460c7d 100644
  obj-$(CONFIG_SWAP)	+= page_io.o swap_state.o swapfile.o
  obj-$(CONFIG_ZSWAP)	+= zswap.o
  obj-$(CONFIG_HAS_DMA)	+= dmapool.o
- 
+
 diff --git a/mm/huge_memory.c b/mm/huge_memory.c
 index 8218e9d188..f47ff9179d 100644
 --- a/mm/huge_memory.c
@@ -821,82 +821,18 @@ index 8218e9d188..f47ff9179d 100644
  		folio_set_lru(new_folio);
  	}
  }
- 
+
 diff --git a/mm/internal.h b/mm/internal.h
 index c80c6f566c..656f4e9bc2 100644
 --- a/mm/internal.h
 +++ b/mm/internal.h
-@@ -532,12 +532,70 @@ extern unsigned long highest_memmap_pfn;
-  */
- #define MAX_RECLAIM_RETRIES 16
- 
+@@ -532,0 +533,6 @@
 +#ifdef CONFIG_LRU_MARIE
-+/*
-+ * Maximum number of swap-write failures (incremented by mm/page_io.c
-+ * __end_swap_bio_write on bio->bi_status != 0) tolerated within a single
-+ * __alloc_pages_slowpath attempt before the early-OOM gate gives up. Lets
-+ * a handful of transient failures (concurrent ZRAM ops, brief retry
-+ * windows) recover, but trips OOM well before MAX_RECLAIM_RETRIES on
-+ * sustained backend rejection. Marie-only; omitted under
-+ * CONFIG_LRU_MARIE=n.
-+ */
 +#define MAX_SWAP_WRITE_FAIL_RETRIES 16
-+
-+/*
-+ * Marie's early-OOM watermark (KiB). Owned by mm/lru_marie/core.c,
-+ * consumed by mm/page_alloc.c:should_reclaim_retry. Tunable at runtime
-+ * via /sys/kernel/mm/lru_marie/oom_min_free_kbytes; auto-defaulted to
-+ * ~1% of total RAM in marie_init().
-+ */
 +extern unsigned long marie_oom_min_free_kbytes;
-+
-+/*
-+ * Marie's clean-file floor as a percentage of total RAM. Owned by
-+ * mm/lru_marie/core.c. Read by should_reclaim_retry's early-OOM gate
-+ * so OOM is withheld while reclaimable file cache stays at/above the
-+ * same floor the Marie pick driver protects.
-+ */
 +extern unsigned int marie_clean_min_ratio;
 +#endif
 +
- /*
-  * in mm/vmscan.c:
-+ *
-+ * struct scan_control is private to vmscan.c. Out-of-tree LRU
-+ * experiments (mm/lru_marie) read/update individual fields via the
-+ * sc_* accessors declared below; the struct itself is opaque to
-+ * everything outside vmscan.c.
-  */
-+struct scan_control;
-+
- bool folio_isolate_lru(struct folio *folio);
- void folio_putback_lru(struct folio *folio);
-+struct reclaim_stat;
-+unsigned int shrink_folio_list(struct list_head *folio_list,
-+		struct pglist_data *pgdat, struct scan_control *sc,
-+		struct reclaim_stat *stat, bool ignore_references,
-+		struct mem_cgroup *memcg);
- extern void reclaim_throttle(pg_data_t *pgdat, enum vmscan_throttle_state reason);
-+int vmscan_reclaimer_offset(struct scan_control *sc);
-+bool vmscan_can_reclaim_anon_pages(struct mem_cgroup *memcg, int nid,
-+				   struct scan_control *sc);
-+
-+/*
-+ * scan_control accessors -- read/update the few fields out-of-tree
-+ * readers need without exposing the struct layout. All defined in
-+ * vmscan.c next to the struct definition; trivial enough that the
-+ * compiler routinely inlines the body across LTO. Non-LTO builds
-+ * pay one extra call per use, which lands only on cold paths
-+ * (entry of marie_state_shrink_lruvec and the inner tier loop).
-+ */
-+int  sc_priority(const struct scan_control *sc);
-+int  sc_reclaim_idx(const struct scan_control *sc);
-+bool sc_reclaim_target_reached(const struct scan_control *sc);
-+void sc_add_reclaimed(struct scan_control *sc, unsigned long nr);
-+bool sc_cgroup_reclaim(const struct scan_control *sc);
- int user_proactive_reclaim(char *buf,
- 			   struct mem_cgroup *memcg, pg_data_t *pgdat);
- 
 @@ -595,6 +653,18 @@ struct alloc_context {
  	 */
  	enum zone_type highest_zoneidx;
@@ -916,7 +852,7 @@ index c80c6f566c..656f4e9bc2 100644
  };
  
  /*
- 
+
 diff --git a/mm/lru_marie/Makefile b/mm/lru_marie/Makefile
 new file mode 100644
 index 0000000000..c1e9c9becf
@@ -942,7 +878,7 @@ index 0000000000..c1e9c9becf
 +else
 +obj-y	+= simd_generic.o
 +endif
- 
+
 diff --git a/mm/lru_marie/bitmap.c b/mm/lru_marie/bitmap.c
 new file mode 100644
 index 0000000000..da8f595a6b
@@ -1115,7 +1051,7 @@ index 0000000000..da8f595a6b
 +		src->l2[lw] = 0;
 +	}
 +}
- 
+
 diff --git a/mm/lru_marie/bitmap.h b/mm/lru_marie/bitmap.h
 new file mode 100644
 index 0000000000..1439771849
@@ -1350,7 +1286,7 @@ index 0000000000..1439771849
 +}
 +
 +#endif	/* _MM_LRU_MARIE_BITMAP_H */
- 
+
 diff --git a/mm/lru_marie/core.c b/mm/lru_marie/core.c
 new file mode 100644
 index 0000000000..bf62467812
@@ -3239,7 +3175,7 @@ index 0000000000..bf62467812
 +	return 0;
 +}
 +subsys_initcall(marie_init);
- 
+
 diff --git a/mm/lru_marie/prefetch.h b/mm/lru_marie/prefetch.h
 new file mode 100644
 index 0000000000..1581ca0f88
@@ -3338,7 +3274,7 @@ index 0000000000..1581ca0f88
 +#define MARIE_BM_L3_AHEAD_WORDS		16
 +
 +#endif /* _MM_LRU_MARIE_PREFETCH_H */
- 
+
 diff --git a/mm/lru_marie/simd.h b/mm/lru_marie/simd.h
 new file mode 100644
 index 0000000000..146fe5fd3d
@@ -3444,7 +3380,7 @@ index 0000000000..146fe5fd3d
 +void lru_marie_simd_young_pte_mask(const void *table, unsigned long *bitmap);
 +
 +#endif /* _MM_LRU_MARIE_SIMD_H */
- 
+
 diff --git a/mm/lru_marie/simd_generic.c b/mm/lru_marie/simd_generic.c
 new file mode 100644
 index 0000000000..0045098bfa
@@ -3497,7 +3433,7 @@ index 0000000000..0045098bfa
 +	lru_marie_simd_young_pte_mask_raw(table, bitmap);
 +}
 +EXPORT_SYMBOL_GPL(lru_marie_simd_young_pte_mask);
- 
+
 diff --git a/mm/lru_marie/simd_x86.c b/mm/lru_marie/simd_x86.c
 new file mode 100644
 index 0000000000..b119b6c265
@@ -3671,7 +3607,7 @@ index 0000000000..b119b6c265
 +	lru_marie_simd_batch_end();
 +}
 +EXPORT_SYMBOL_GPL(lru_marie_simd_young_pte_mask);
- 
+
 diff --git a/mm/lru_marie/simd_x86_avx2.S b/mm/lru_marie/simd_x86_avx2.S
 new file mode 100644
 index 0000000000..95242d53b0
@@ -3892,7 +3828,7 @@ index 0000000000..95242d53b0
 +	vzeroupper
 +	RET
 +SYM_FUNC_END(lru_marie_simd_scan_avx2)
- 
+
 diff --git a/mm/lru_marie/simd_x86_avx512.S b/mm/lru_marie/simd_x86_avx512.S
 new file mode 100644
 index 0000000000..18d73dbd8b
@@ -4098,7 +4034,7 @@ index 0000000000..18d73dbd8b
 +	vzeroupper
 +	RET
 +SYM_FUNC_END(lru_marie_simd_scan_avx512)
- 
+
 diff --git a/mm/lru_marie/simd_x86_sse2.S b/mm/lru_marie/simd_x86_sse2.S
 new file mode 100644
 index 0000000000..4646ca1b9c
@@ -4320,7 +4256,7 @@ index 0000000000..4646ca1b9c
 +
 +	RET
 +SYM_FUNC_END(lru_marie_simd_scan_sse2)
- 
+
 diff --git a/mm/lru_marie/state.c b/mm/lru_marie/state.c
 new file mode 100644
 index 0000000000..53e6d98fd7
@@ -6827,7 +6763,7 @@ index 0000000000..53e6d98fd7
 +{
 +	return percpu_counter_init(&marie_nr_folios, 0, GFP_KERNEL);
 +}
- 
+
 diff --git a/mm/lru_marie/state.h b/mm/lru_marie/state.h
 new file mode 100644
 index 0000000000..1f2cbdcf03
@@ -8129,7 +8065,7 @@ index 0000000000..1f2cbdcf03
 +
 +#endif /* CONFIG_LRU_MARIE */
 +#endif /* _MM_LRU_MARIE_STATE_H */
- 
+
 diff --git a/mm/lru_marie/version.h b/mm/lru_marie/version.h
 new file mode 100644
 index 0000000000..03b83475b9
@@ -8158,7 +8094,7 @@ index 0000000000..03b83475b9
 +#define MARIE_VERSION	"0.2.1"
 +
 +#endif /* _MM_LRU_MARIE_VERSION_H */
- 
+
 diff --git a/mm/lru_marie/walker.c b/mm/lru_marie/walker.c
 new file mode 100644
 index 0000000000..e94ac1b381
@@ -9183,7 +9119,7 @@ index 0000000000..e94ac1b381
 +	for (nid = 0; nid < MAX_NUMNODES; nid++)
 +		spin_lock_init(&marie_blooms[nid].lock);
 +}
- 
+
 diff --git a/mm/memcontrol-v1.c b/mm/memcontrol-v1.c
 index 6eed14bff7..2841aab255 100644
 --- a/mm/memcontrol-v1.c
@@ -9215,7 +9151,7 @@ index 6eed14bff7..2841aab255 100644
  	return 0;
  }
  
- 
+
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
 index 61cf6af26f..17ba28b2ee 100644
 --- a/mm/memcontrol.c
@@ -9254,7 +9190,7 @@ index 61cf6af26f..17ba28b2ee 100644
  	return memcg;
  fail:
  	mem_cgroup_id_remove(memcg);
- 
+
 diff --git a/mm/mm_init.c b/mm/mm_init.c
 index 7712d887b6..3e7cf7aa2e 100644
 --- a/mm/mm_init.c
@@ -9269,7 +9205,7 @@ index 7712d887b6..3e7cf7aa2e 100644
  	init_waitqueue_head(&pgdat->pfmemalloc_wait);
  
  	for (i = 0; i < NR_VMSCAN_THROTTLE; i++)
- 
+
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
 index 6288c7e4b9..28782b5560 100644
 --- a/mm/page_alloc.c
@@ -9394,7 +9330,7 @@ index 6288c7e4b9..28782b5560 100644
  restart:
  	compaction_retries = 0;
  	no_progress_loops = 0;
- 
+
 diff --git a/mm/page_io.c b/mm/page_io.c
 index 3c342db77c..f0e5e71220 100644
 --- a/mm/page_io.c
@@ -9562,21 +9498,12 @@ index 3c342db77c..f0e5e71220 100644
  /*
   * We may have stale swap cache pages in memory: notice
   * them here and get rid of the unnecessary final write.
-@@ -272,6 +411,14 @@ int swap_writeout(struct folio *folio, struct swap_iocb **swap_plug)
- 	 */
- 	swap_zeromap_folio_clear(folio);
- 
-+	/*
-+	 * Compression within zswap and zram might block rmap, unmap
-+	 * of both file and anon pages, try to do compression async
-+	 * if possible
-+	 */
+@@ -272,0 +273,5 @@ int swap_writeout(struct folio *folio, struct swap_iocb **swap_plug)
++#ifdef CONFIG_LRU_MARIE
 +	if (kcompmari_store(folio, swap_plug))
 +		return 0;
++#endif
 +
- 	if (zswap_store(folio)) {
- 		count_mthp_stat(folio_order(folio), MTHP_STAT_ZSWPOUT);
- 		goto out_unlock;
 @@ -288,6 +435,46 @@ int swap_writeout(struct folio *folio, struct swap_iocb **swap_plug)
  	return ret;
  }
@@ -9624,7 +9551,7 @@ index 3c342db77c..f0e5e71220 100644
  static inline void count_swpout_vm_event(struct folio *folio)
  {
  #ifdef CONFIG_TRANSPARENT_HUGEPAGE
- 
+
 diff --git a/mm/rmap.c b/mm/rmap.c
 index 8f3c50bd11..818ee3881a 100644
 --- a/mm/rmap.c
@@ -9649,7 +9576,7 @@ index 8f3c50bd11..818ee3881a 100644
  		} else if (pvmw.pte) {
  			if (ptep_clear_flush_young_notify(vma, address,
  						pvmw.pte))
- 
+
 diff --git a/mm/swap.c b/mm/swap.c
 index 2260dcd277..cc80743d3f 100644
 --- a/mm/swap.c
@@ -9829,7 +9756,7 @@ index 2260dcd277..cc80743d3f 100644
  	folio_batch_add_and_move(folio, lru_lazyfree);
  }
  
- 
+
 diff --git a/mm/swap.h b/mm/swap.h
 index c6bdc5d215..be0826e422 100644
 --- a/mm/swap.h
@@ -9845,7 +9772,7 @@ index c6bdc5d215..be0826e422 100644
  
  /* linux/mm/swap_state.c */
  extern struct address_space swap_space __read_mostly;
- 
+
 diff --git a/mm/vmscan.c b/mm/vmscan.c
 index 95b1179a14..3be780910c 100644
 --- a/mm/vmscan.c
@@ -10230,35 +10157,8 @@ index 95b1179a14..3be780910c 100644
  	pgdat_kswapd_unlock(pgdat);
  }
  
-@@ -7536,16 +7791,60 @@ void __meminit kswapd_stop(int nid)
- 		kthread_stop(kswapd);
- 		pgdat->kswapd = NULL;
- 	}
-+#if defined(CONFIG_LRU_MARIE) && defined(CONFIG_SWAP)
-+	if (pgdat->kcompmari) {
-+		kthread_stop(pgdat->kcompmari);
-+		pgdat->kcompmari = NULL;
-+		kfifo_free(&pgdat->kcompmari_fifo);
-+	}
-+#endif
- 	pgdat_kswapd_unlock(pgdat);
- }
- 
+@@ -7536,10 +7791,27 @@ void __meminit kswapd_stop(int nid)
 +#ifdef CONFIG_LRU_MARIE
-+/*
-+ * vm.swappiness write notifier for the Marie LRU controller. Calls
-+ * the default proc_dointvec_minmax to perform range-checked storage
-+ * into vm_swappiness, then, on a successful write, notifies Marie so
-+ * it can reset every per-lruvec swap_bias counter. The notification
-+ * is skipped on read or on validation failure -- only an actual
-+ * value change should trigger controller reset.
-+ *
-+ * Note: we always notify on a successful write even when the new
-+ * value equals the old one. The cost is one xa walk; the alternative
-+ * (snapshot+compare) would require atomicity guarantees that
-+ * proc_dointvec_minmax does not provide, and gives no practical
-+ * benefit since reset-to-zero is idempotent.
-+ */
 +static int marie_swappiness_sysctl_handler(const struct ctl_table *table,
 +					   int write, void *buffer,
 +					   size_t *lenp, loff_t *ppos)
@@ -10278,12 +10178,6 @@ index 95b1179a14..3be780910c 100644
  		.maxlen		= sizeof(vm_swappiness),
  		.mode		= 0644,
 +#ifdef CONFIG_LRU_MARIE
-+		/*
-+		 * Marie wraps the default minmax handler so that a sysctl
-+		 * write resets every per-lruvec swap_bias counter to zero.
-+		 * See mm/lru_marie/state.c::marie_swap_bias_update for the
-+		 * controller this notification clears.
-+		 */
 +		.proc_handler	= marie_swappiness_sysctl_handler,
 +#else
  		.proc_handler	= proc_dointvec_minmax,
@@ -10291,4 +10185,3 @@ index 95b1179a14..3be780910c 100644
  		.extra1		= SYSCTL_ZERO,
  		.extra2		= SYSCTL_TWO_HUNDRED,
  	},
--- 
