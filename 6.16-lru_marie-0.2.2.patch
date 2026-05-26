@@ -769,12 +769,11 @@ index 21abb33535..7d40460c7d 100644
 @@ -75,6 +75,7 @@ ifdef CONFIG_MMU
  	obj-$(CONFIG_ADVISE_SYSCALLS)	+= madvise.o
  endif
-
+ 
  obj-$(CONFIG_SWAP)	+= page_io.o swap_state.o swapfile.o
  obj-$(CONFIG_ZSWAP)	+= zswap.o
-+obj-$(CONFIG_LRU_MARIE)	+= lru_marie/
  obj-$(CONFIG_HAS_DMA)	+= dmapool.o
- obj-$(CONFIG_HUGETLBFS)	+= hugetlb.o
++obj-$(CONFIG_LRU_MARIE)	+= lru_marie/
 
 diff --git a/mm/huge_memory.c b/mm/huge_memory.c
 index 8218e9d188..f47ff9179d 100644
@@ -788,16 +787,29 @@ index 8218e9d188..f47ff9179d 100644
  #include <linux/sched.h>
  #include <linux/sched/mm.h>
  #include <linux/sched/numa_balancing.h>
-@@ -3243,10 +3244,24 @@ static void lru_add_split_folio(struct folio *folio, struct folio *new_folio,
+@@ -3243,10 +3244,31 @@ static void lru_add_split_folio(struct folio *folio, struct folio *new_folio,
  	} else {
  		/* head is still on lru (and we have it frozen) */
  		VM_WARN_ON(!folio_test_lru(folio));
-+		/* Keep split tails on Marie when the head is tracked. */
- 		if (folio_test_unevictable(folio))
+-		if (folio_test_unevictable(folio))
++		if (folio_test_unevictable(folio)) {
  			new_folio->mlock_count = 0;
 -		else
-+		else {
++		} else {
 +#ifdef CONFIG_LRU_MARIE
++			/*
++			 * If Marie owns @folio (the head), the legacy
++			 * list_add_tail below would put the new tail on the
++			 * legacy LRU without a TRACKED state byte, leaving it
++			 * invisible to Marie's per-mlv bookkeeping
++			 * (mlv->types[].nr_pages, marie_nr_folios). Route
++			 * through Marie's split helper which sets TRACKED,
++			 * publishes the per-PFN state at the same gen as
++			 * @folio, and increments the folio counter. The
++			 * helper falls back to plain list_add_tail when
++			 * @folio is not Marie-tracked, so the static branch
++			 * is the only gate the !lru_marie_enabled() case sees.
++			 */
 +			if (lru_marie_enabled())
 +				lru_marie_split_folio(lruvec, folio, new_folio);
 +			else
