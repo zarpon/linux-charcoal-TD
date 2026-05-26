@@ -1,26 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenAI <noreply@openai.com>
+Date: Tue, 26 May 2026 00:00:00 +0000
+Subject: [PATCH] marie fix: declare kcompmari for vmscan
+
+---
+ mm/vmscan.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/mm/vmscan.c b/mm/vmscan.c
+index 1111111111..2222222222 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -70,6 +70,10 @@
- #include <linux/memory-tiers.h>
- #include <linux/pagewalk.h>
- 
+@@ -40,6 +40,11 @@
+ #include <linux/freezer.h>
+ #include <linux/memcontrol.h>
+ #include <linux/lru_marie.h>
 +#if defined(CONFIG_LRU_MARIE) && defined(CONFIG_SWAP)
++/* kcompmari thread function defined in mm/page_io.c */
 +extern int kcompmari(void *data);
 +#endif
-+
- #include "internal.h"
- #include "swap.h"
- 
---- a/mm/internal.h
-+++ b/mm/internal.h
-@@ -560,6 +560,11 @@
- extern struct task_struct *kswapd_run(int nid);
- extern void kswapd_stop(int nid);
- 
-+#if defined(CONFIG_LRU_MARIE) && defined(CONFIG_SWAP)
-+extern int kcompmari(void *data);
-+#endif
-+
- #ifdef CONFIG_COMPACTION
- extern void compaction_defer_reset(pg_data_t *pgdat, int order,
- 				   bool alloc_success);
+ #include <linux/migrate.h>
+ #include <linux/delayacct.h>
+
+-- 
+2.34.1
