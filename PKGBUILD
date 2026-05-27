@@ -54,7 +54,7 @@ source=(
   charcoal.conf
   65-adios.rules
   99-charcoal.sh
-  6.16-lru_marie-0.2.2.patch
+  6.16-lru_marie.patch
   vangogh_allow_higher_cpu_freq.patch
   vangogh_higher_max_power_limit.patch
   drm_sched_rr_default.patch
