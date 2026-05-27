@@ -1,48 +1,6 @@
-diff --git a/mm/internal.h b/mm/internal.h
---- a/mm/internal.h
-+++ b/mm/internal.h
-@@ -532,5 +532,24 @@
- #ifdef CONFIG_LRU_MARIE
- #define MAX_SWAP_WRITE_FAIL_RETRIES 16
- extern unsigned long marie_oom_min_free_kbytes;
- extern unsigned int marie_clean_min_ratio;
-+struct mem_cgroup;
-+struct reclaim_stat;
-+struct scan_control;
-+
-+int sc_priority(const struct scan_control *sc);
-+int sc_reclaim_idx(const struct scan_control *sc);
-+bool sc_reclaim_target_reached(const struct scan_control *sc);
-+void sc_add_reclaimed(struct scan_control *sc, unsigned long nr);
-+bool sc_cgroup_reclaim(const struct scan_control *sc);
-+int vmscan_reclaimer_offset(struct scan_control *sc);
-+bool vmscan_can_reclaim_anon_pages(struct mem_cgroup *memcg,
-+				   int nid,
-+				   struct scan_control *sc);
-+unsigned int shrink_folio_list(struct list_head *folio_list,
-+			       struct pglist_data *pgdat,
-+			       struct scan_control *sc,
-+			       struct reclaim_stat *stat,
-+			       bool ignore_references,
-+			       struct mem_cgroup *memcg);
- #endif
-
 diff --git a/mm/lru_marie/state.c b/mm/lru_marie/state.c
 --- a/mm/lru_marie/state.c
 +++ b/mm/lru_marie/state.c
-@@ -2129,14 +2129,14 @@ static inline bool lru_marie_activate_folio(struct folio *folio)
-  {
- 	/*
- 	 * Publish PG_lru and update counters in line, synchronously under
- 	 * the caller's lru_lock. PG_active is cleared in the same atomic
- 	 * mask write (was already cleared above for was_active==true; the
- 	 * mask keeps the invariant for the defensive case where another
- 	 * path set it between then and now).
- 	 */
+@@ -2133,7 +2133,7 @@ static inline bool lru_marie_activate_folio(struct folio *folio)
 -	set_mask_bits(&folio->flags.f, BIT(PG_active), BIT(PG_lru));
 +	set_mask_bits(&folio->flags, BIT(PG_active), BIT(PG_lru));
- 	inst_lru = folio_lru_list(folio);
- 
- 	marie_pc_add(&mlv->types[type].nr_pages, nr);
- 	marie_pc_add(&marie_nr_folios, 1);
- 	marie_update_lru_size(mlv->lruvec, inst_lru, zone, nr);
