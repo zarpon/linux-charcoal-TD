@@ -538,7 +538,7 @@ index f6a2b2d200..d237c5d05b 100644
  	WARN_ON_ONCE(nr_pages != (int)nr_pages);
  
  	__mod_lruvec_state(lruvec, NR_LRU_BASE + lru, nr_pages);
-@@ -123,6 +129,15 @@ static inline bool lru_gen_in_fault(void)
+@@ -123,6 +129,14 @@ static inline bool lru_gen_in_fault(void)
  	return current->in_lru_fault;
  }
  
@@ -563,7 +563,7 @@ index f6a2b2d200..d237c5d05b 100644
 +static inline void lru_gen_fill_lruvec(struct lruvec *lruvec) { }
 +static inline void lru_gen_drain_lruvec(struct lruvec *lruvec) { }
  
-@@ -342,8 +360,20 @@ static __always_inline void lruvec_add_folio(struct lruvec *lruvec, struct folio
+@@ -342,8 +360,19 @@ static __always_inline void lruvec_add_folio(struct lruvec *lruvec, struct folio
  {
  	enum lru_list lru = folio_lru_list(folio);
  
@@ -583,7 +583,7 @@ index f6a2b2d200..d237c5d05b 100644
  
  	update_lru_size(lruvec, lru, folio_zonenum(folio),
  			folio_nr_pages(folio));
-@@ -356,8 +386,16 @@ static __always_inline void lruvec_add_folio_tail(struct lruvec *lruvec, struct 
+@@ -356,8 +386,17 @@ static __always_inline void lruvec_add_folio_tail(struct lruvec *lruvec, struct 
  {
  	enum lru_list lru = folio_lru_list(folio);
  
@@ -601,7 +601,7 @@ index f6a2b2d200..d237c5d05b 100644
  
  	update_lru_size(lruvec, lru, folio_zonenum(folio),
  			folio_nr_pages(folio));
-@@ -370,6 +408,10 @@ static __always_inline void lruvec_del_folio(struct lruvec *lruvec, struct folio
+@@ -370,5 +408,10 @@ static __always_inline void lruvec_del_folio(struct lruvec *lruvec, struct folio
  {
  	enum lru_list lru = folio_lru_list(folio);
  
@@ -625,7 +625,7 @@ index 7fb7331c57..520fe5b2b7 100644
  #include <asm/page.h>
  
  /* Free memory management - zoned buddy allocator.  */
-@@ -695,6 +697,17 @@ struct lruvec {
+@@ -695,6 +697,16 @@ struct lruvec {
  	struct pglist_data *pgdat;
  #endif
  
@@ -642,7 +642,7 @@ index 7fb7331c57..520fe5b2b7 100644
  };
  
  /* Isolate for asynchronous migration */
-@@ -1430,2 +1443,16 @@ typedef struct pglist_data {
+@@ -1430,5 +1443,19 @@ typedef struct pglist_data {
  	int kswapd_failures;		/* Number of 'reclaimed == 0' runs */
  
 +#if defined(CONFIG_LRU_MARIE) && defined(CONFIG_SWAP)
@@ -666,7 +666,7 @@ diff --git a/include/linux/swap.h b/include/linux/swap.h
 index e818fbade1..e7b8b27ed6 100644
 --- a/include/linux/swap.h
 +++ b/include/linux/swap.h
-@@ -450,2 +450,16 @@ extern long total_swap_pages;
+@@ -450,5 +450,20 @@ extern long total_swap_pages;
  extern atomic_t nr_rotate_swap;
  
 +#ifdef CONFIG_LRU_MARIE
@@ -691,7 +691,7 @@ diff --git a/mm/Kconfig b/mm/Kconfig
 index 76001e9ba0..86ca3a652e 100644
 --- a/mm/Kconfig
 +++ b/mm/Kconfig
-@@ -1329,6 +1329,34 @@ config LRU_GEN_WALKS_MMU
+@@ -1329,6 +1329,35 @@ config LRU_GEN_WALKS_MMU
  	depends on LRU_GEN && ARCH_HAS_HW_PTE_YOUNG
  # }
  
@@ -10140,7 +10140,7 @@ index 95b1179a14..48cb278e9e 100644
  	pgdat_kswapd_unlock(pgdat);
  }
  
-@@ -7536,16 +7818,60 @@ void __meminit kswapd_stop(int nid)
+@@ -7536,17 +7818,60 @@ void __meminit kswapd_stop(int nid)
  		kthread_stop(kswapd);
  		pgdat->kswapd = NULL;
  	}
