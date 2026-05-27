@@ -571,11 +571,16 @@ index f6a2b2d200d..2d9b5b4e5f8 100644
  
  static inline bool lru_gen_enabled(void)
  {
-+static inline void lru_gen_fill_lruvec(struct lruvec *lruvec) { }
-+static inline void lru_gen_drain_lruvec(struct lruvec *lruvec) { }
+	return false;
+}
+ 
++static inline void lru_gen_fill_lruvec(struct lruvec *lruvec)
++{
++}
 +
- 	return false;
- }
++static inline void lru_gen_drain_lruvec(struct lruvec *lruvec)
++{
++}
  
 @@ -342,8 +380,23 @@ void lruvec_add_folio(struct lruvec *lruvec, struct folio *folio)
  {
