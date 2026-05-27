@@ -1,14 +1,29 @@
-diff --git a/mm/vmscan.c b/mm/vmscan.c
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -66,6 +66,11 @@
- #include <linux/freezer.h>
- #include <linux/memcontrol.h>
- #include <linux/lru_marie.h>
+diff --git a/mm/internal.h b/mm/internal.h
+--- a/mm/internal.h
++++ b/mm/internal.h
+@@ -470,6 +470,10 @@
+ struct reclaim_stat;
+ unsigned int shrink_folio_list(struct list_head *folio_list,
+ 		struct pglist_data *pgdat, struct scan_control *sc,
+ 		struct reclaim_stat *stat, bool ignore_references);
++int vmscan_reclaimer_offset(struct scan_control *sc);
++bool sc_cgroup_reclaim(const struct scan_control *sc);
 +
-+#if defined(CONFIG_LRU_MARIE) && defined(CONFIG_SWAP)
-+extern int kcompmari(void *data);
-+#endif
 +
- #include <linux/migrate.h>
- #include <linux/delayacct.h>
+ extern void reclaim_throttle(pg_data_t *pgdat, enum vmscan_throttle_state reason);
+ int vmscan_can_reclaim_anon_pages(struct mem_cgroup *memcg, int nid,
+ 				   struct scan_control *sc);
+ diff --git a/mm/lru_marie/state.c b/mm/lru_marie/state.c
+--- a/mm/lru_marie/state.c
++++ b/mm/lru_marie/state.c
+@@ -2130,7 +2130,7 @@ static inline void lru_marie_activate_folio(struct folio *folio)
+ {
+ 	/*
+ 	 * Kernel 6.16 Valve tree compatibility:
+ 	 * folio->flags is unsigned long directly.
+ 	 */
+-	set_mask_bits(&folio->flags.f, BIT(PG_active), BIT(PG_lru));
++	set_mask_bits(&folio->flags, BIT(PG_active), BIT(PG_lru));
+ }
+ 
+ /*
