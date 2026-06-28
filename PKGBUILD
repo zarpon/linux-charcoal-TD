@@ -4,10 +4,10 @@
 
 pkgbase=linux-charcoal-616
 _nepbase=linux-neptune-616
-_tag=6.16.12-valve24-2
+_tag=6.16.12-valve24.2
 _ver=1
 pkgver=${_tag//-/.}.cc$_ver
-pkgrel=2
+pkgrel=1
 pkgdesc='Linux'
 url="https://gitlab.steamos.cloud/jupiter/linux-integration/-/tree/$_tag"
 arch=(x86_64)
