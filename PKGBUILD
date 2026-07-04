@@ -4,7 +4,7 @@
 
 pkgbase=linux-charcoal-616
 _nepbase=linux-neptune-616
-_tag=6.16.12-valve24.2
+_tag=6.16.12-valve24.4
 _ver=1
 pkgver=${_tag//-/.}.cc$_ver
 pkgrel=1
@@ -96,7 +96,7 @@ source=(
    6.16-poc-selector-v2.6.1.patch 
    6.16-nap-v0.4.0.patch
 )
-sha256sums=('11c34cda75eb4c65369757e71f8230ab5e2285031d366683c9cc96f698d2ac92'
+sha256sums=('b7772a6fad499c81ced4a34e1aca3ed73a0d13f849950f4980dc250577f007cd'
             '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
             'd88eaf0f94bae470040e4882f334c05b1bb2ab0a99e4b7299aa0b2337810ab8d'
             'f15615180ef04cec50aee50353c9156d04eb4dccb6102cf1a0717b12de0e8e2c'
