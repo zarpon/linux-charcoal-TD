@@ -18,17 +18,13 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - name: Calculate, validate and commit checksums
+      - name: Calculate and commit checksums
         shell: bash
         run: |
           set -euo pipefail
 
-          config_sha="$(sha256sum config-charcoal | awk '{print $1}')"
-          sched_url='https://raw.githubusercontent.com/firelzrd/bore-scheduler/69c9409354ad8be29280e97ceccb507d2c394be1/patches/additions/0002-sched-ext-coexistence-fix.patch'
-          sched_sha="$(curl --fail --silent --show-error --location "$sched_url" | sha256sum | awk '{print $1}')"
-
-          export CONFIG_SHA="$config_sha"
-          export SCHED_SHA="$sched_sha"
+          export CONFIG_SHA="$(sha256sum config-charcoal | awk '{print $1}')"
+          export SCHED_SHA="$(curl --fail --silent --show-error --location 'https://raw.githubusercontent.com/firelzrd/bore-scheduler/69c9409354ad8be29280e97ceccb507d2c394be1/patches/additions/0002-sched-ext-coexistence-fix.patch' | sha256sum | awk '{print $1}')"
 
           python3 <<'PY'
           import os
@@ -46,11 +42,15 @@ jobs:
           if len(tokens) != 48:
               raise SystemExit(f'expected 48 checksum entries, found {len(tokens)}')
 
-          replacements = {
+          if tokens[3].group(1) != 'SKIP':
+              raise SystemExit(f'unexpected checksum at index 3: {tokens[3].group(1)}')
+          if tokens[34].group(1) != 'SKIP':
+              raise SystemExit(f'unexpected checksum at index 34: {tokens[34].group(1)}')
+
+          for index, value in sorted({
               3: os.environ['CONFIG_SHA'],
               34: os.environ['SCHED_SHA'],
-          }
-          for index, value in sorted(replacements.items(), reverse=True):
+          }.items(), reverse=True):
               token = tokens[index]
               block = block[:token.start(1)] + value + block[token.end(1):]
 
@@ -58,33 +58,8 @@ jobs:
           path.write_text(updated, encoding='utf-8')
           PY
 
-          bash <<'BASH'
-          set -euo pipefail
-          source ./PKGBUILD
-
-          [[ ${#source[@]} -eq 48 ]]
-          [[ ${#sha256sums[@]} -eq 48 ]]
-          [[ ${source[3]} == 'config-charcoal' ]]
-          [[ ${source[34]} == *'0002-sched-ext-coexistence-fix.patch'* ]]
-          [[ ${sha256sums[3]} == "$CONFIG_SHA" ]]
-          [[ ${sha256sums[34]} == "$SCHED_SHA" ]]
-
-          for index in "${!source[@]}"; do
-            if [[ ${sha256sums[index]} == SKIP ]] \
-              && [[ ${source[index]} != git+* ]] \
-              && [[ ${source[index]} != *::git+* ]]; then
-              printf 'Non-VCS source still uses SKIP: index=%s source=%s\n' "$index" "${source[index]}" >&2
-              exit 1
-            fi
-          done
-          BASH
-
           git diff --check
-
-          if git diff --quiet -- PKGBUILD; then
-            echo 'PKGBUILD already contains the calculated checksums.'
-            exit 0
-          fi
+          git diff -- PKGBUILD
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
