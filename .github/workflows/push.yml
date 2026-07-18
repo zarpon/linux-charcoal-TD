@@ -87,6 +87,7 @@ jobs:
             makepkg --verifysource 2>&1 | tee logs/verifysource.log
             makepkg -Ccf --noconfirm 2>&1 | tee logs/makepkg.log
           '
+          sudo chown -R "$(id -u):$(id -g)" logs linux-charcoal-*.pkg.tar.zst
           compgen -G 'linux-charcoal-*.pkg.tar.zst' >/dev/null
           sha256sum linux-charcoal-*.pkg.tar.zst | tee logs/SHA256SUMS
           PKGVER="$(bash -c 'source PKGBUILD; printf "%s" "$pkgver"')"
