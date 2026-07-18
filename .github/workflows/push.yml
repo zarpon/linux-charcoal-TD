@@ -1,71 +1,168 @@
-name: Build
+name: Build latest SteamOS Charcoal kernel
 
 on:
   push:
+    branches:
+      - master
   pull_request:
-    types: [opened, reopened, edited]
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: charcoal-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-kernel:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Configure zswap
         run: |
           echo zstd | sudo tee /sys/module/zswap/parameters/compressor
-          echo 90   | sudo tee /sys/module/zswap/parameters/max_pool_percent
-          echo 1    | sudo tee /sys/module/zswap/parameters/shrinker_enabled
-          echo 1    | sudo tee /sys/module/zswap/parameters/enabled
-      - name: Free up space (1)
-        run: find /opt/ -maxdepth 1 -mindepth 1 '!' -path /opt/containerd '!' -path /opt/actionarchivecache '!' -path /opt/runner '!' -path /opt/runner-cache -exec echo Deleting '{}' ';' -exec rm -rf '{}' ';'
-      - name: Free up space (2)
-        uses: jlumbroso/free-disk-space@v1.3.1
+          echo 90 | sudo tee /sys/module/zswap/parameters/max_pool_percent
+          echo 1 | sudo tee /sys/module/zswap/parameters/shrinker_enabled
+          echo 1 | sudo tee /sys/module/zswap/parameters/enabled
+
+      - name: Free runner space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
         with:
           tool-cache: true
-      - name: Set Swap Space
-        uses: pierotofy/set-swap-space@master
+
+      - name: Configure 16 GiB swap
+        uses: pierotofy/set-swap-space@fc79b3f67fa8a838184ce84a674ca12238d2c761
         with:
           swap-size-gb: 16
-      - name: Checkout
+
+      - name: Check out project
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Get current tag
-        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
-        run: echo "current_tag=$(git describe --tags --abbrev=0 --exact-match 2>/dev/null || echo '')" >> $GITHUB_ENV
-      - name: Get previous tag
-        if: ${{ env.current_tag }}
-        run: echo "previous_tag=$(git describe --tags --abbrev=0 ${{ env.current_tag }}^ 2>/dev/null || echo '')" >> $GITHUB_ENV
-      - name: Generate changelog
-        id: changelog
-        uses: jaywcjlove/changelog-generator@main
-        if: ${{ env.current_tag && env.previous_tag }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build docker image
-        run: docker build . -t charcoal
-      - name: Build Kernel
+
+      - name: Resolve latest compatible SteamOS patches
         run: |
-          docker run --rm -v ${PWD}:/project charcoal chown -R nobody /project
-          docker run --rm -v ${PWD}:/project charcoal sudo -u nobody makepkg -Ccf
-      - name: Upload Artifacts
-        if: ${{ ! env.current_tag }}
+          set -Eeuo pipefail
+          mkdir -p logs
+          python3 -m py_compile automation/resolve-latest-patches.py automation/finalize-pkgbuild-checksums.py
+          python3 automation/resolve-latest-patches.py --write | tee logs/resolver.log
+          bash -n PKGBUILD
+          grep -Fq 'patches/testing/0001-linux6.16.12-lru_marie-' logs/patch-lock.json
+          grep -Fq 'latest-adios.patch' PKGBUILD
+          grep -Fq 'latest-bore.patch' PKGBUILD
+          grep -Fq 'latest-lru_marie.patch' PKGBUILD
+          grep -Fq 'latest-zram-ir.patch' PKGBUILD
+          grep -Fq 'latest-poc-selector.patch' PKGBUILD
+          grep -Fq 'latest-nap.patch' PKGBUILD
+
+      - name: Build Docker image
+        run: docker build . -t charcoal 2>&1 | tee logs/docker-build.log
+
+      - name: Validate sources and build packages
+        run: |
+          set -Eeuo pipefail
+          restore_log_owner() {
+            sudo chown -R "$(id -u):$(id -g)" logs || true
+          }
+          trap restore_log_owner EXIT
+
+          # makepkg must run as an unprivileged user, but keep .git owned by
+          # the runner so tag/release operations remain writable afterwards.
+          docker run --rm -v "$PWD:/project" charcoal bash -lc '
+            set -Eeuo pipefail
+            find /project -mindepth 1 -path /project/.git -prune -o -exec chown nobody {} +
+          '
+          docker run --rm -v "$PWD:/project" charcoal sudo -u nobody bash -lc '
+            set -Eeuo pipefail
+            cd /project
+
+            # Fetch sources once. The resolver lock records the SHA-256 of every
+            # dynamically materialized patch. No patch is applied at this stage.
+            makepkg --verifysource 2>&1 | tee logs/verifysource-bootstrap.log
+
+            # Generate checksums from the exact downloaded bytes and rewrite the
+            # PKGBUILD. SKIP is permitted only for pinned VCS sources.
+            makepkg -g > logs/generated-sha256sums.txt
+            python3 automation/finalize-pkgbuild-checksums.py \
+              --generated logs/generated-sha256sums.txt \
+              --report logs/checksum-validation.txt
+            bash -n PKGBUILD
+
+            # Verify again, now against real SHA-256 values, before prepare/build.
+            makepkg --verifysource 2>&1 | tee logs/verifysource.log
+            makepkg -Ccf --noconfirm 2>&1 | tee logs/makepkg.log
+          '
+          # The container created logs as nobody; host-side post-processing
+          # must be able to create SHA256SUMS and release notes.
+          restore_log_owner
+          compgen -G 'linux-charcoal-*.pkg.tar.zst' >/dev/null
+          sha256sum linux-charcoal-*.pkg.tar.zst | tee logs/SHA256SUMS
+          PKGVER="$(bash -c 'source PKGBUILD; printf "%s" "$pkgver"')"
+          echo "PKGVER=$PKGVER" >> "$GITHUB_ENV"
+          RELEASE_TAG="charcoal-${PKGVER}-r${GITHUB_RUN_NUMBER}"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+
+      - name: Upload test artifacts
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: linux-charcoal
-          path: linux-charcoal-*.pkg.tar.zst
-          if-no-files-found: warn
-      - name: Publish release
-        if: ${{ env.current_tag }}
-        uses: ncipollo/release-action@v1
+          name: linux-charcoal-${{ env.PKGVER }}
+          path: |
+            linux-charcoal-*.pkg.tar.zst
+            logs/patch-lock.json
+            logs/checksum-validation.txt
+            logs/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Generate release notes
+        if: github.event_name == 'push' && github.ref_name == 'master'
+        run: |
+          set -Eeuo pipefail
+          previous="$(gh release view --json tagName -q .tagName 2>/dev/null || true)"
+          {
+            echo "# Charcoal SteamOS kernel ${PKGVER}"
+            echo
+            echo "Built from the newest SteamOS 6.16 Valve tag and dynamically resolved or locally ported patches."
+            echo
+            echo '## Patch lock'
+            echo '```json'
+            cat logs/patch-lock.json
+            echo '```'
+            echo
+            echo '## Changes'
+            if [[ -n "$previous" ]]; then
+              git log --pretty='- %s (%h)' "$previous"..HEAD
+            else
+              git log -20 --pretty='- %s (%h)'
+            fi
+          } > logs/release-notes.md
+
+      - name: Publish GitHub release
+        if: github.event_name == 'push' && github.ref_name == 'master'
+        run: |
+          set -Eeuo pipefail
+          git tag "$RELEASE_TAG" "$GITHUB_SHA"
+          git push origin "$RELEASE_TAG"
+          gh release create "$RELEASE_TAG" \
+            linux-charcoal-*.pkg.tar.zst \
+            logs/patch-lock.json \
+            logs/checksum-validation.txt \
+            logs/SHA256SUMS \
+            --title "$RELEASE_TAG" \
+            --notes-file logs/release-notes.md \
+            --verify-tag
+
+      - name: Upload validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          tag: ${{ env.current_tag }}
-          name: ${{ env.current_tag }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          artifactErrorsFailBuild: true
-          artifactContentType: application/zstd
-          body: ${{ steps.changelog.outputs.changelog }}
-          artifacts: linux-charcoal-*.pkg.tar.zst
+          name: charcoal-validation-${{ github.run_number }}
+          path: logs
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "kernel_source": {
+    "repository": "evlaV/linux-integration",
+    "tag_regex": "^(?P<version>6\\.16\\.\\d+)-valve(?P<valve>[0-9.]+)$"
+  },
+  "components": [
+    {
+      "name": "lru_marie",
+      "repository": "firelzrd/lru_marie",
+      "target": "latest-lru_marie.patch",
+      "filename_regex": "(?i)^patches/(testing|stable)/0001-linux6\\.16\\.12-lru_marie-[0-9.]+\\.patch$",
+      "local_port": "6.16.12-lru_marie-0.6.7.patch"
+    },
+    {
+      "name": "zram_ir",
+      "repository": "firelzrd/zram-ir",
+      "target": "latest-zram-ir.patch",
+      "filename_regex": "(?i)^.*0001-linux6\\.16\\.12-zram-ir-[0-9.]+\\.patch$",
+      "local_port": "0001-linux6.16.12-zram-ir-1.2.patch"
+    },
+    {
+      "name": "adios",
+      "repository": "firelzrd/adios",
+      "target": "latest-adios.patch",
+      "filename_regex": "(?i)^.*6\\.16\\.12-ADIOS-[0-9.]+\\.patch$",
+      "exclude_regex": "(?i)default",
+      "local_port": "6.16.12-ADIOS-3.2.0.patch"
+    },
+    {
+      "name": "bore",
+      "repository": "firelzrd/bore-scheduler",
+      "target": "latest-bore.patch",
+      "filename_regex": "(?i)^.*6\\.16\\.12-bore-[0-9A-Za-z._-]+\\.patch$",
+      "exclude_regex": "(?i)(addition|sched-ext)",
+      "local_port": "6.16.12-bore-6.6.3.patch"
+    },
+    {
+      "name": "poc_selector",
+      "repository": "firelzrd/poc-selector",
+      "target": "latest-poc-selector.patch",
+      "filename_regex": "(?i)^.*6\\.16(?:\\.12)?-poc-selector-[0-9A-Za-z._-]+\\.patch$",
+      "local_port": "6.16-poc-selector-v2.6.1.patch"
+    },
+    {
+      "name": "nap",
+      "repository": "firelzrd/nap",
+      "target": "latest-nap.patch",
+      "filename_regex": "(?i)^.*6\\.16(?:\\.12)?-nap-v?[0-9A-Za-z._-]+\\.patch$",
+      "local_port": "6.16-nap-v0.5.0.patch"
+    }
+  ]
+}
