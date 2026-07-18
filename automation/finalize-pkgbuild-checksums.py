@@ -15,31 +15,50 @@ def array_bounds(text: str, variable: str) -> tuple[int, int]:
     start = re.search(rf"(?m)^{re.escape(variable)}=\(", text)
     if not start:
         raise ChecksumError(f"{variable} array not found")
-    end = re.search(r"(?m)^\s*\)\s*$", text[start.end():])
-    if not end:
-        raise ChecksumError(f"unterminated {variable} array")
-    return start.start(), start.end() + end.end()
+
+    index = start.end()
+    quote: str | None = None
+    escaped = False
+    depth = 1
+    while index < len(text):
+        character = text[index]
+        if escaped:
+            escaped = False
+        elif character == "\\":
+            escaped = True
+        elif quote:
+            if character == quote:
+                quote = None
+        elif character in ("'", '"'):
+            quote = character
+        elif character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+            if depth == 0:
+                return start.start(), index + 1
+        index += 1
+
+    raise ChecksumError(f"unterminated {variable} array")
 
 
-def quoted_values(block: str) -> list[str]:
-    return re.findall(r"['\"]([^'\"]+)['\"]", block)
-
-
-def evaluated_sources(pkgbuild: Path) -> list[str]:
+def evaluated_array(path: Path, variable: str) -> list[str]:
     command = (
         'set -Eeuo pipefail; source "$1"; '
-        'printf "%s\\0" "${source[@]}"'
+        f'declare -p {variable} >/dev/null; '
+        f'printf "%s\\0" "${{{variable}[@]}}"'
     )
     try:
         result = subprocess.run(
-            ["bash", "-c", command, "bash", str(pkgbuild)],
+            ["bash", "-c", command, "bash", str(path)],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.decode("utf-8", errors="replace").strip()
-        raise ChecksumError(f"unable to evaluate PKGBUILD source array: {stderr}") from exc
+        raise ChecksumError(f"unable to evaluate {variable} array: {stderr}") from exc
+
     return [entry.decode("utf-8") for entry in result.stdout.split(b"\0") if entry]
 
 
@@ -51,21 +70,19 @@ def main() -> int:
     args = parser.parse_args()
 
     pkgbuild_path = Path(args.pkgbuild)
+    generated_path = Path(args.generated)
     text = pkgbuild_path.read_text(encoding="utf-8")
-    generated = Path(args.generated).read_text(encoding="utf-8").strip()
-    if not generated.startswith("sha256sums=("):
-        raise ChecksumError("makepkg did not generate a sha256sums array")
 
-    sources = evaluated_sources(pkgbuild_path)
-    generated_start, generated_end = array_bounds(generated, "sha256sums")
-    checksums = quoted_values(generated[generated_start:generated_end])
+    sources = evaluated_array(pkgbuild_path, "source")
+    checksums = evaluated_array(generated_path, "sha256sums")
     if len(sources) != len(checksums):
         raise ChecksumError(
             f"source/checksum count mismatch: {len(sources)} sources, {len(checksums)} checksums"
         )
 
     vcs_indexes = {
-        index for index, source in enumerate(sources)
+        index
+        for index, source in enumerate(sources)
         if "git+" in source or source.startswith(("git://", "svn+", "hg+", "bzr+"))
     }
     invalid: list[str] = []
@@ -81,9 +98,13 @@ def main() -> int:
     if invalid:
         raise ChecksumError("; ".join(invalid))
 
+    replacement = "sha256sums=(\n" + "\n".join(
+        f"  '{checksum}'" for checksum in checksums
+    ) + "\n)"
     sha_start, sha_end = array_bounds(text, "sha256sums")
-    replacement = generated[generated_start:generated_end]
-    pkgbuild_path.write_text(text[:sha_start] + replacement + text[sha_end:], encoding="utf-8")
+    pkgbuild_path.write_text(
+        text[:sha_start] + replacement + text[sha_end:], encoding="utf-8"
+    )
 
     report = Path(args.report)
     report.parent.mkdir(parents=True, exist_ok=True)
