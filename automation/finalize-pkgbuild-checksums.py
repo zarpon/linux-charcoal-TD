@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -20,8 +21,26 @@ def array_bounds(text: str, variable: str) -> tuple[int, int]:
     return start.start(), start.end() + end.end()
 
 
-def values(block: str) -> list[str]:
+def quoted_values(block: str) -> list[str]:
     return re.findall(r"['\"]([^'\"]+)['\"]", block)
+
+
+def evaluated_sources(pkgbuild: Path) -> list[str]:
+    command = (
+        'set -Eeuo pipefail; source "$1"; '
+        'printf "%s\\0" "${source[@]}"'
+    )
+    try:
+        result = subprocess.run(
+            ["bash", "-c", command, "bash", str(pkgbuild)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.decode("utf-8", errors="replace").strip()
+        raise ChecksumError(f"unable to evaluate PKGBUILD source array: {stderr}") from exc
+    return [entry.decode("utf-8") for entry in result.stdout.split(b"\0") if entry]
 
 
 def main() -> int:
@@ -37,19 +56,18 @@ def main() -> int:
     if not generated.startswith("sha256sums=("):
         raise ChecksumError("makepkg did not generate a sha256sums array")
 
-    source_start, source_end = array_bounds(text, "source")
+    sources = evaluated_sources(pkgbuild_path)
     generated_start, generated_end = array_bounds(generated, "sha256sums")
-    sources = values(text[source_start:source_end])
-    checksums = values(generated[generated_start:generated_end])
+    checksums = quoted_values(generated[generated_start:generated_end])
     if len(sources) != len(checksums):
         raise ChecksumError(
             f"source/checksum count mismatch: {len(sources)} sources, {len(checksums)} checksums"
         )
 
-    vcs_indexes = [
+    vcs_indexes = {
         index for index, source in enumerate(sources)
         if "git+" in source or source.startswith(("git://", "svn+", "hg+", "bzr+"))
-    ]
+    }
     invalid: list[str] = []
     skip_indexes: list[int] = []
     for index, checksum in enumerate(checksums):
