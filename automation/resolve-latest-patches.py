@@ -77,13 +77,17 @@ def paged(url: str, token: str | None) -> Iterable[Any]:
 
 def resolve_kernel_tag(config: dict[str, Any], token: str | None) -> tuple[str, str]:
     pattern = re.compile(config["tag_regex"])
+    required_version = config.get("version")
     matches: list[tuple[tuple[int, ...], str, str]] = []
     for tag in paged(f"{API}/repos/{config['repository']}/tags", token):
         name = tag.get("name", "")
         match = pattern.fullmatch(name)
-        if match:
-            score = version_key(match.group("version")) + version_key(match.group("valve"))
-            matches.append((score, name, tag["commit"]["sha"]))
+        if not match or "-rc" in name.lower():
+            continue
+        if required_version and match.group("version") != required_version:
+            continue
+        score = version_key(match.group("version")) + version_key(match.group("valve"))
+        matches.append((score, name, tag["commit"]["sha"]))
     if not matches:
         raise ResolveError("no Valve SteamOS 6.16 tag matched")
     _, name, sha = max(matches)

@@ -45,6 +45,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ensure ZIP packaging tool
+        run: |
+          if ! command -v zip >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y zip
+          fi
+
       - name: Resolve latest compatible SteamOS patches
         run: |
           set -Eeuo pipefail
@@ -66,17 +73,15 @@ jobs:
       - name: Validate sources and build packages
         run: |
           set -Eeuo pipefail
-          restore_log_owner() {
-            sudo chown -R "$(id -u):$(id -g)" logs || true
+          restore_workspace_owner() {
+            sudo chown -R "$(id -u):$(id -g)" "$PWD" || true
           }
-          trap restore_log_owner EXIT
+          trap restore_workspace_owner EXIT
 
-          # makepkg must run as an unprivileged user, but keep .git owned by
-          # the runner so tag/release operations remain writable afterwards.
-          docker run --rm -v "$PWD:/project" charcoal bash -lc '
-            set -Eeuo pipefail
-            find /project -mindepth 1 -path /project/.git -prune -o -exec chown nobody {} +
-          '
+          # makepkg must run as an unprivileged user and must be able to create
+          # src/pkg below /project. Restore the complete workspace afterwards,
+          # including .git, for host-side packaging and release operations.
+          docker run --rm -v "$PWD:/project" charcoal chown -R nobody /project
           docker run --rm -v "$PWD:/project" charcoal sudo -u nobody bash -lc '
             set -Eeuo pipefail
             cd /project
@@ -98,14 +103,83 @@ jobs:
             makepkg -Ccf --noconfirm 2>&1 | tee logs/makepkg.log
           '
           # The container created logs as nobody; host-side post-processing
-          # must be able to create SHA256SUMS and release notes.
-          restore_log_owner
+          # must be able to create checksums, the ZIP and release notes.
+          restore_workspace_owner
           compgen -G 'linux-charcoal-*.pkg.tar.zst' >/dev/null
           sha256sum linux-charcoal-*.pkg.tar.zst | tee logs/SHA256SUMS
           PKGVER="$(bash -c 'source PKGBUILD; printf "%s" "$pkgver"')"
+          KERNEL_TAG="$(bash -c 'source PKGBUILD; printf "%s" "$_tag"')"
           echo "PKGVER=$PKGVER" >> "$GITHUB_ENV"
+          echo "KERNEL_TAG=$KERNEL_TAG" >> "$GITHUB_ENV"
           RELEASE_TAG="charcoal-${PKGVER}-r${GITHUB_RUN_NUMBER}"
           echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          RELEASE_ZIP="linux-charcoal-${PKGVER}-r${GITHUB_RUN_NUMBER}.zip"
+          echo "RELEASE_ZIP=$RELEASE_ZIP" >> "$GITHUB_ENV"
+
+      - name: Generate release description
+        run: |
+          set -Eeuo pipefail
+          previous=""
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            previous="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName 2>/dev/null || true)"
+          fi
+          {
+            echo "# Charcoal SteamOS kernel ${PKGVER}"
+            echo
+            echo "Built from the latest stable SteamOS 6.16 tag: \`${KERNEL_TAG}\`."
+            echo
+            echo "## Updates"
+            python3 - <<'PY'
+          import json
+
+          with open("logs/patch-lock.json", encoding="utf-8") as handle:
+              lock = json.load(handle)
+
+          for name, item in lock["components"].items():
+              origin = item.get("origin", "unknown")
+              path = item.get("path", "unknown")
+              commit = item.get("commit", "unknown")
+              if origin == "local-port":
+                  detail = f"6.16.12 local port ({path})"
+              else:
+                  detail = f"latest compatible upstream patch ({path})"
+              print(f"- **{name}**: {detail}; source commit `{commit}`.")
+          PY
+            echo
+            echo "## Artifacts"
+            echo "- Kernel package ZIP: \`${RELEASE_ZIP}\`"
+            echo "- Kernel source: \`${KERNEL_TAG}\`"
+            echo
+            echo "## Changes in the repository"
+            if [[ -n "$previous" ]]; then
+              git log --pretty='- %s (%h)' "$previous"..HEAD
+            else
+              git log -20 --pretty='- %s (%h)'
+            fi
+          } > logs/release-notes.md
+
+      - name: Assemble kernel release ZIP
+        run: |
+          set -Eeuo pipefail
+          mkdir -p release
+          cp linux-charcoal-*.pkg.tar.zst release/
+          cp logs/patch-lock.json logs/checksum-validation.txt logs/SHA256SUMS logs/release-notes.md release/
+          cat > release/README.md <<EOF
+          # Charcoal SteamOS kernel ${KERNEL_TAG}
+
+          This archive contains the compiled Charcoal kernel packages for SteamOS.
+
+          Install on SteamOS with:
+
+              sudo steamos-readonly disable
+              sudo pacman -U linux-charcoal-*.pkg.tar.zst
+              sudo steamos-readonly enable
+
+          The archive also contains the exact patch lock, SHA-256 checksums and build
+          description used for this release.
+          EOF
+          (cd release && zip -9 -q "../${RELEASE_ZIP}" ./*)
+          sha256sum "${RELEASE_ZIP}" | tee logs/RELEASE-ZIP-SHA256SUM
 
       - name: Upload test artifacts
         if: github.event_name == 'pull_request'
@@ -114,34 +188,14 @@ jobs:
           name: linux-charcoal-${{ env.PKGVER }}
           path: |
             linux-charcoal-*.pkg.tar.zst
+            ${{ env.RELEASE_ZIP }}
             logs/patch-lock.json
             logs/checksum-validation.txt
             logs/SHA256SUMS
+            logs/RELEASE-ZIP-SHA256SUM
+            logs/release-notes.md
           if-no-files-found: error
           retention-days: 14
-
-      - name: Generate release notes
-        if: github.event_name == 'push' && github.ref_name == 'master'
-        run: |
-          set -Eeuo pipefail
-          previous="$(gh release view --json tagName -q .tagName 2>/dev/null || true)"
-          {
-            echo "# Charcoal SteamOS kernel ${PKGVER}"
-            echo
-            echo "Built from the newest SteamOS 6.16 Valve tag and dynamically resolved or locally ported patches."
-            echo
-            echo '## Patch lock'
-            echo '```json'
-            cat logs/patch-lock.json
-            echo '```'
-            echo
-            echo '## Changes'
-            if [[ -n "$previous" ]]; then
-              git log --pretty='- %s (%h)' "$previous"..HEAD
-            else
-              git log -20 --pretty='- %s (%h)'
-            fi
-          } > logs/release-notes.md
 
       - name: Publish GitHub release
         if: github.event_name == 'push' && github.ref_name == 'master'
@@ -150,10 +204,10 @@ jobs:
           git tag "$RELEASE_TAG" "$GITHUB_SHA"
           git push origin "$RELEASE_TAG"
           gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            "${RELEASE_ZIP}" \
+            logs/RELEASE-ZIP-SHA256SUM \
             linux-charcoal-*.pkg.tar.zst \
-            logs/patch-lock.json \
-            logs/checksum-validation.txt \
-            logs/SHA256SUMS \
             --title "$RELEASE_TAG" \
             --notes-file logs/release-notes.md \
             --verify-tag

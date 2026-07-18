@@ -2,7 +2,8 @@
   "schema": 1,
   "kernel_source": {
     "repository": "evlaV/linux-integration",
-    "tag_regex": "^(?P<version>6\\.16\\.\\d+)-valve(?P<valve>[0-9.]+)$"
+    "version": "6.16.12",
+    "tag_regex": "^(?P<version>6\\.16\\.12)-valve(?P<valve>[0-9.]+)$"
   },
   "components": [
     {
