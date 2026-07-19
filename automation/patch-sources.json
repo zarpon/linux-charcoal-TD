@@ -11,43 +11,110 @@
       "repository": "firelzrd/lru_marie",
       "ref": "main",
       "target": "latest-lru_marie.patch",
+      "filename_regex": "(?i)^patches/testing/0001-linux6\\.16(?:\\.[0-9]+)?-lru_marie-[0-9]+(?:\\.[0-9]+)*\\.patch$",
+      "kernel_version_regex": "(?i)linux(?P<kernel>\\d+\\.\\d+(?:\\.\\d+)?)"
       "filename_regex": "(?i)^patches/testing/0001-linux6\\.16\\.12-lru_marie-[0-9]+(?:\\.[0-9]+)*\\.patch$"
     },
     {
       "name": "zram_ir",
       "repository": "firelzrd/zram-ir",
+      "ref": "main",
       "target": "latest-zram-ir.patch",
-      "filename_regex": "(?i)^.*0001-linux6\\.16\\.12-zram-ir-[0-9.]+\\.patch$",
+      "filename_regex": "(?i)^patches/0001-linux\\d+\\.\\d+(?:\\.\\d+)?(?:\\.y)?-zram-ir-[0-9.]+\\.patch$",
+      "kernel_version_regex": "(?i)linux(?P<kernel>\\d+\\.\\d+(?:\\.\\d+)?)",
+      "port_for_kernel": "6.16.12",
+      "port_when_incompatible": true,
       "local_port": "0001-linux6.16.12-zram-ir-1.2.patch"
     },
     {
       "name": "adios",
       "repository": "firelzrd/adios",
+      "ref": "main",
       "target": "latest-adios.patch",
-      "filename_regex": "(?i)^.*6\\.16\\.12-ADIOS-[0-9.]+\\.patch$",
+      "filename_regex": "(?i)^patches/stable/0001-linux\\d+\\.\\d+(?:\\.\\d+)?-ADIOS-[0-9.]+\\.patch$",
+      "kernel_version_regex": "(?i)linux(?P<kernel>\\d+\\.\\d+(?:\\.\\d+)?)",
       "exclude_regex": "(?i)default",
+      "port_when_incompatible": true,
       "local_port": "6.16.12-ADIOS-3.2.0.patch"
     },
     {
-      "name": "bore",
-      "repository": "firelzrd/bore-scheduler",
-      "target": "latest-bore.patch",
-      "filename_regex": "(?i)^.*6\\.16\\.12-bore-[0-9A-Za-z._-]+\\.patch$",
-      "exclude_regex": "(?i)(addition|sched-ext)",
-      "local_port": "6.16.12-bore-6.6.3.patch"
+      "name": "infinity_core",
+      "repository": "galpt/infinity-scheduler",
+      "ref": "v4.6-gpu",
+      "target": "latest-infinity-0001.patch",
+      "filename_regex": "(?i)^patches/arch/7\\.1/0001-.*\\.patch$",
+      "always_latest": true,
+      "port_for_kernel": "6.16.12",
+      "local_port": "6.16.12-infinity-0001-v4.6-gpu.patch"
+    },
+    {
+      "name": "infinity_cpu",
+      "repository": "galpt/infinity-scheduler",
+      "ref": "v4.6-gpu",
+      "target": "latest-infinity-0002.patch",
+      "filename_regex": "(?i)^patches/arch/7\\.1/0002-.*\\.patch$",
+      "always_latest": true,
+      "port_for_kernel": "6.16.12",
+      "local_port": "6.16.12-infinity-0002-v4.6-gpu.patch"
+    },
+    {
+      "name": "infinity_rt",
+      "repository": "galpt/infinity-scheduler",
+      "ref": "v4.6-gpu",
+      "target": "latest-infinity-0003.patch",
+      "filename_regex": "(?i)^patches/arch/7\\.1/0003-.*\\.patch$",
+      "always_latest": true,
+      "port_for_kernel": "6.16.12",
+      "local_port": "6.16.12-infinity-0003-v4.6-gpu.patch"
+    },
+    {
+      "name": "infinity_gpu_headers",
+      "repository": "galpt/infinity-scheduler",
+      "ref": "v4.6-gpu",
+      "target": "latest-infinity-0004.patch",
+      "filename_regex": "(?i)^patches/arch/7\\.1/0004-.*\\.patch$",
+      "always_latest": true,
+      "port_for_kernel": "6.16.12",
+      "local_port": "6.16.12-infinity-0004-v4.6-gpu.patch"
+    },
+    {
+      "name": "infinity_gpu_vtime",
+      "repository": "galpt/infinity-scheduler",
+      "ref": "v4.6-gpu",
+      "target": "latest-infinity-0005.patch",
+      "filename_regex": "(?i)^patches/arch/7\\.1/0005-.*\\.patch$",
+      "always_latest": true,
+      "port_for_kernel": "6.16.12",
+      "local_port": "6.16.12-infinity-0005-v4.6-gpu.patch"
+    },
+    {
+      "name": "infinity_gpu_cleanup",
+      "repository": "galpt/infinity-scheduler",
+      "ref": "v4.6-gpu",
+      "target": "latest-infinity-0006.patch",
+      "filename_regex": "(?i)^patches/arch/7\\.1/0006-.*\\.patch$",
+      "always_latest": true,
+      "port_for_kernel": "6.16.12",
+      "local_port": "6.16.12-infinity-0006-v4.6-gpu.patch"
     },
     {
       "name": "poc_selector",
       "repository": "firelzrd/poc-selector",
+      "ref": "main",
       "target": "latest-poc-selector.patch",
-      "filename_regex": "(?i)^.*6\\.16(?:\\.12)?-poc-selector-[0-9A-Za-z._-]+\\.patch$",
+      "filename_regex": "(?i)^patches/stable/0001-\\d+\\.\\d+(?:\\.\\d+)?(?:-[0-9A-Za-z.]+)?-poc-selector-[0-9A-Za-z._-]+\\.patch$",
+      "kernel_version_regex": "(?i)(?P<kernel>\\d+\\.\\d+(?:\\.\\d+)?)",
+      "port_when_incompatible": true,
       "local_port": "6.16-poc-selector-v2.6.1.patch"
     },
     {
       "name": "nap",
       "repository": "firelzrd/nap",
+      "ref": "main",
       "target": "latest-nap.patch",
-      "filename_regex": "(?i)^.*6\\.16(?:\\.12)?-nap-v?[0-9A-Za-z._-]+\\.patch$",
+      "filename_regex": "(?i)^patches/stable/0001-\\d+\\.\\d+(?:\\.\\d+)?(?:-[0-9A-Za-z.]+)?-nap-v?[0-9A-Za-z._-]+\\.patch$",
+      "kernel_version_regex": "(?i)(?P<kernel>\\d+\\.\\d+(?:\\.\\d+)?)",
+      "port_when_incompatible": true,
       "local_port": "6.16-nap-v0.5.0.patch"
     }
   ]

@@ -1,7 +1,7 @@
 # Charcoal SteamOS Kernel
 [![build](https://github.com/V10lator/linux-charcoal/actions/workflows/push.yml/badge.svg)](https://github.com/V10lator/linux-charcoal/actions)
 
-Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other AMD-powered handheld PCs, built on top of Valve's [linux-neptune](https://gitlab.steamos.cloud/jupiter/linux-integration). It pushes the base further - built with LLVM/LTO/Polly, optimized for Zen 2, and patched with best-in-class schedulers like BORE and ADIOS. The result is a kernel tuned specifically for handheld gaming: better CPU responsiveness, improved I/O throughput, higher hardware limits, and bundled controller drivers - all without the bloat of debugging and unused features.
+Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other AMD-powered handheld PCs, built on top of Valve's [linux-neptune](https://gitlab.steamos.cloud/jupiter/linux-integration). It pushes the base further - built with LLVM/LTO/Polly, optimized for Zen 2, and patched with the Infinity CPU/GPU scheduler and ADIOS. The result is a kernel tuned specifically for handheld gaming: better CPU responsiveness, improved I/O throughput, higher hardware limits, and bundled controller drivers - all without the bloat of debugging and unused features.
 
 ## Supported Devices
 
@@ -19,14 +19,14 @@ Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other A
 - Optimize for Zen 2 architecture (from Gentoo)
 - Build with LLVM + LTO + Polly
 - Built-in various always-needed modules so LTO can shine even more
-- Add [BORE](https://github.com/firelzrd/bore-scheduler) - Burst-Oriented Response Enhancer CPU scheduler; prioritizes short CPU bursts for better frame pacing and input latency in games
+- Add [Infinity Scheduler](https://github.com/galpt/infinity-scheduler) - continuously adapts CPU CFS/EEVDF, RT and DRM GPU scheduling to recent CPU/GPU burst history
 - Add [ADIOS](https://github.com/firelzrd/adios) - adaptive I/O scheduler tuned for responsiveness
 - Add [re-swappiness](https://github.com/firelzrd/re-swappiness) - fixes broken vm.swappiness behavior under MGLRU (without this patch, the kernel effectively ignores the swappiness value)
 - Add [zram-ir](https://github.com/firelzrd/zram-ir) - tries multiple compression algorithms immediately on write so pages get the best ratio without waiting for background recompression
 - Add [kcompressd-unofficial](https://github.com/firelzrd/kcompressd-unofficial) - dedicated zram compression thread
 - Add [POC-Selector](https://github.com/firelzrd/poc-selector) - O(1) idle CPU lookup replacing the default linear scan hot path
 - Add [Nap](https://github.com/firelzrd/nap) - neural network CPUIdle governor that predicts optimal idle states per-CPU
-- Switch default DRM scheduling policy to round-robin
+- Add Infinity virtual-time DRM GPU scheduling with CPU/futex-aware cross-scheduler coupling
 - Switch CPU idle scheduler
 - Disable CPU mitigations (single-user device; gains measurable performance)
 

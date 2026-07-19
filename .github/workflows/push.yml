@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 'validation/**'
   pull_request:
     branches:
       - master
@@ -61,11 +62,79 @@ jobs:
           bash -n PKGBUILD
           grep -Fq 'patches/testing/0001-linux6.16.12-lru_marie-' logs/patch-lock.json
           grep -Fq 'latest-adios.patch' PKGBUILD
-          grep -Fq 'latest-bore.patch' PKGBUILD
           grep -Fq 'latest-lru_marie.patch' PKGBUILD
           grep -Fq 'latest-zram-ir.patch' PKGBUILD
           grep -Fq 'latest-poc-selector.patch' PKGBUILD
           grep -Fq 'latest-nap.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0001.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0002.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0003.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0004.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0005.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0006.patch' PKGBUILD
+          ! grep -Fq 'latest-bore.patch' PKGBUILD
+          ! grep -Fq 'drm_sched_rr_default.patch' PKGBUILD
+          python3 - <<'PY'
+          import json
+          import re
+
+          with open("logs/patch-lock.json", encoding="utf-8") as handle:
+              lock = json.load(handle)
+
+          expected_repositories = {
+              "lru_marie": "firelzrd/lru_marie",
+              "zram_ir": "firelzrd/zram-ir",
+              "adios": "firelzrd/adios",
+              "infinity_core": "galpt/infinity-scheduler",
+              "infinity_cpu": "galpt/infinity-scheduler",
+              "infinity_rt": "galpt/infinity-scheduler",
+              "infinity_gpu_headers": "galpt/infinity-scheduler",
+              "infinity_gpu_vtime": "galpt/infinity-scheduler",
+              "infinity_gpu_cleanup": "galpt/infinity-scheduler",
+              "poc_selector": "firelzrd/poc-selector",
+              "nap": "firelzrd/nap",
+          }
+
+          assert set(lock["components"]) == set(expected_repositories)
+          for name, item in lock["components"].items():
+              assert re.fullmatch(r"[0-9a-f]{64}", item["sha256"])
+              assert item["size"] > 0
+              assert item["origin"] in {"upstream-compatible", "local-port"}
+              if item["origin"] == "upstream-compatible":
+                  assert item["repository"] == expected_repositories[name]
+                  assert item["commit"] and item["commit"] != "repository-local"
+                  assert item["path"] and item["url"]
+              else:
+                  upstream = item.get("upstream")
+                  assert item["repository"] == "zarpon/linux-charcoal-TD"
+                  assert upstream and upstream["repository"] == expected_repositories[name]
+                  assert upstream["commit"] and upstream["commit"] != "repository-local"
+                  assert upstream["path"] and upstream["url"]
+                  assert re.fullmatch(r"[0-9a-f]{64}", upstream["sha256"])
+                  assert upstream["size"] > 0
+
+          for name in (
+              "infinity_core",
+              "infinity_cpu",
+              "infinity_rt",
+              "infinity_gpu_headers",
+              "infinity_gpu_vtime",
+              "infinity_gpu_cleanup",
+          ):
+              item = lock["components"][name]
+              assert item["origin"] == "local-port"
+              assert item["selection"] == "latest-upstream-port"
+
+          assert lock["components"]["adios"]["selection"] in {
+              "upstream-compatible", "nearest-upstream-port"
+          }
+          assert lock["components"]["poc_selector"]["selection"] in {
+              "upstream-compatible", "nearest-upstream-port"
+          }
+          assert lock["components"]["nap"]["selection"] in {
+              "upstream-compatible", "nearest-upstream-port"
+          }
+          PY
 
       - name: Build Docker image
         run: docker build . -t charcoal 2>&1 | tee logs/docker-build.log
@@ -101,6 +170,34 @@ jobs:
               --generated logs/generated-sha256sums.txt \
               --report logs/checksum-validation.txt
             bash -n PKGBUILD
+
+            python3 - <<'PY'
+          import importlib.util
+          import re
+          from pathlib import Path
+
+          spec = importlib.util.spec_from_file_location(
+              "checksum_validation", "automation/finalize-pkgbuild-checksums.py"
+          )
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          sources = module.evaluated_array(Path("PKGBUILD"), "source")
+          checksums = module.evaluated_array(Path("PKGBUILD"), "sha256sums")
+          assert len(sources) == len(checksums), (len(sources), len(checksums))
+          assert checksums and any(checksum != "SKIP" for checksum in checksums)
+          vcs = {
+              index
+              for index, source in enumerate(sources)
+              if "git+" in source or source.startswith(("git://", "svn+", "hg+", "bzr+"))
+          }
+          for index, checksum in enumerate(checksums):
+              if checksum == "SKIP":
+                  assert index in vcs, sources[index]
+              else:
+                  assert re.fullmatch(r"[0-9a-f]{64}", checksum), sources[index]
+          skip = "SKIP"
+          print(f"sources={len(sources)} sha256={len(checksums) - sum(item == skip for item in checksums)} vcs_skip={sum(item == skip for item in checksums)}")
+          PY
 
             # Verify again, now against real SHA-256 values, before prepare/build.
             makepkg --verifysource 2>&1 | tee logs/verifysource.log
@@ -146,6 +243,12 @@ jobs:
               commit = item.get("commit", "unknown")
               if origin == "local-port":
                   detail = f"6.16.12 local port ({path})"
+                  upstream = item.get("upstream")
+                  if upstream:
+                      detail += (
+                          f" following {upstream.get('repository')}"
+                          f"/{upstream.get('path')}@{upstream.get('commit')}"
+                      )
               else:
                   detail = f"latest compatible upstream patch ({path})"
               print(f"- **{name}**: {detail}; source commit `{commit}`.")
@@ -236,7 +339,7 @@ jobs:
           sha256sum "${RELEASE_ZIP}" | tee logs/RELEASE-ZIP-SHA256SUM
 
       - name: Upload test artifacts
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || startsWith(github.ref_name, 'validation/')
         uses: actions/upload-artifact@v4
         with:
           name: linux-charcoal-packages-${{ env.PKGVER }}
