@@ -11,7 +11,7 @@
       "repository": "firelzrd/lru_marie",
       "ref": "main",
       "target": "latest-lru_marie.patch",
-      "filename_regex": "(?i)^patches/testing/0001-linux6\\\\.16\\\\.12-lru_marie-[0-9]+(?:\\\\.[0-9]+)*\\\\.patch$"
+      "filename_regex": "(?i)^patches/testing/0001-linux6\\.16\\.12-lru_marie-[0-9]+(?:\\.[0-9]+)*\\.patch$"
     },
     {
       "name": "zram_ir",
