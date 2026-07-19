@@ -88,7 +88,7 @@
  	if (likely(sched_info_on()))
 --- a/kernel/sched/infinity_sched.c
 +++ b/kernel/sched/infinity_sched.c
-@@ -0,0 +1,234 @@
+@@ -0,0 +1,235 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (c) 2026 Galih Tama <galpt@v.recipes>
@@ -108,6 +108,7 @@
 + * (uclamp declarations, EMA tracking, futex_waiting flag).
 + */
 +#include <linux/math64.h>
++#include <linux/mmu_context.h>
 +#include <linux/sysctl.h>
 +#include <uapi/linux/sched/types.h>
 +#include "sched.h"
@@ -495,4 +496,3 @@
  #ifdef CONFIG_CFS_BANDWIDTH
  	int			runtime_enabled;
  	s64			runtime_remaining;
-
