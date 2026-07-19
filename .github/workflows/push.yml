@@ -169,8 +169,18 @@ jobs:
       - name: Assemble kernel release ZIP
         run: |
           set -Eeuo pipefail
-          mkdir -p release
-          cp linux-charcoal-*.pkg.tar.zst release/
+          # Recreate the staging directory so a retry can never carry a
+          # previous release archive into the next archive.
+          rm -rf -- release
+          rm -f -- "${RELEASE_ZIP}"
+          mkdir release
+          shopt -s nullglob
+          packages=(linux-charcoal-*.pkg.tar.zst)
+          if ((${#packages[@]} == 0)); then
+            echo "No kernel packages were produced" >&2
+            exit 1
+          fi
+          cp -- "${packages[@]}" release/
           cp logs/patch-lock.json logs/checksum-validation.txt logs/SHA256SUMS logs/release-notes.md release/
           cat > release/README.md <<EOF
           # Charcoal SteamOS kernel ${KERNEL_TAG}
@@ -186,17 +196,52 @@ jobs:
           The archive also contains the exact patch lock, SHA-256 checksums and build
           description used for this release.
           EOF
-          (cd release && zip -9 -q "../${RELEASE_ZIP}" ./*)
+          package_names=()
+          for package in "${packages[@]}"; do
+            package_names+=("${package##*/}")
+          done
+          (
+            cd release
+            zip -9 -q "../${RELEASE_ZIP}" \
+              README.md \
+              patch-lock.json \
+              checksum-validation.txt \
+              SHA256SUMS \
+              release-notes.md \
+              "${package_names[@]}"
+          )
+          python3 - "${RELEASE_ZIP}" <<'PY'
+          import sys
+          import zipfile
+
+          archive = sys.argv[1]
+          with zipfile.ZipFile(archive) as handle:
+              names = handle.namelist()
+          nested = [name for name in names if name.lower().endswith(".zip")]
+          if nested:
+              raise SystemExit(f"release archive contains nested ZIP files: {nested}")
+          if len(names) != len(set(names)):
+              raise SystemExit("release archive contains duplicate entries")
+          required = {
+              "README.md",
+              "SHA256SUMS",
+              "checksum-validation.txt",
+              "patch-lock.json",
+              "release-notes.md",
+          }
+          missing = sorted(required - set(names))
+          if missing:
+              raise SystemExit(f"release archive is missing entries: {missing}")
+          PY
           sha256sum "${RELEASE_ZIP}" | tee logs/RELEASE-ZIP-SHA256SUM
 
       - name: Upload test artifacts
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: linux-charcoal-${{ env.PKGVER }}
+          name: linux-charcoal-packages-${{ env.PKGVER }}
           path: |
             linux-charcoal-*.pkg.tar.zst
-            ${{ env.RELEASE_ZIP }}
             logs/patch-lock.json
             logs/checksum-validation.txt
             logs/SHA256SUMS
