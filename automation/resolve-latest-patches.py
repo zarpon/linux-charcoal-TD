@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 API = "https://api.github.com"
-UA = "linux-charcoal-TD-dynamic-resolver/3"
+UA = "linux-charcoal-TD-dynamic-resolver/4"
 
 
 class ResolveError(RuntimeError):
@@ -28,6 +28,9 @@ class Candidate:
     sha: str
     url: str
     score: tuple[int, ...]
+
+
+_TREE_CACHE: dict[tuple[str, str], tuple[str, dict[str, Any]]] = {}
 
 
 def request_json(url: str, token: str | None = None) -> Any:
@@ -78,8 +81,32 @@ def paged(url: str, token: str | None) -> Iterable[Any]:
 def resolve_kernel_tag(config: dict[str, Any], token: str | None) -> tuple[str, str]:
     pattern = re.compile(config["tag_regex"])
     required_version = config.get("version")
-    matches: list[tuple[tuple[int, ...], str, str]] = []
-    for tag in paged(f"{API}/repos/{config['repository']}/tags", token):
+    matches: list[tuple[tuple[int, ...], str, str, str | None]] = []
+    tags: Iterable[Any]
+    if required_version:
+        # The repository has a long history of tags. Query the exact version
+        # prefix instead of paging through every historical tag on each build.
+        encoded = urllib.parse.quote(str(required_version), safe="")
+        tags = request_json(
+            f"{API}/repos/{config['repository']}/git/matching-refs/tags/{encoded}",
+            token,
+        )
+        if not isinstance(tags, list):
+            raise ResolveError("expected a list from matching tag refs")
+    else:
+        tags = paged(f"{API}/repos/{config['repository']}/tags", token)
+
+    for tag in tags:
+        annotated_url = None
+        if "ref" in tag:
+            name = str(tag["ref"]).removeprefix("refs/tags/")
+            object_data = tag.get("object", {})
+            sha = object_data.get("sha")
+            if object_data.get("type") == "tag" and object_data.get("url"):
+                annotated_url = object_data["url"]
+            tag = {"name": name, "commit": {"sha": sha}}
+        else:
+            annotated_url = None
         name = tag.get("name", "")
         match = pattern.fullmatch(name)
         if not match or "-rc" in name.lower():
@@ -87,10 +114,21 @@ def resolve_kernel_tag(config: dict[str, Any], token: str | None) -> tuple[str, 
         if required_version and match.group("version") != required_version:
             continue
         score = version_key(match.group("version")) + version_key(match.group("valve"))
-        matches.append((score, name, tag["commit"]["sha"]))
+        sha = tag.get("commit", {}).get("sha")
+        if not sha:
+            continue
+        matches.append((score, name, sha, annotated_url))
     if not matches:
         raise ResolveError("no Valve SteamOS 6.16 tag matched")
-    _, name, sha = max(matches)
+    _, name, sha, annotated_url = max(matches)
+    if annotated_url:
+        try:
+            annotated = request_json(annotated_url, token)
+        except ResolveError:
+            if token:
+                raise
+        else:
+            sha = annotated.get("object", {}).get("sha", sha)
     return name, sha
 
 
@@ -107,9 +145,16 @@ def upstream_candidates(
     repo = component["repository"]
     branch = component.get("ref") or default_branch(repo, token)
     encoded = urllib.parse.quote(branch, safe="")
-    branch_data = request_json(f"{API}/repos/{repo}/branches/{encoded}", token)
-    commit_sha = branch_data["commit"]["sha"]
-    tree = request_json(f"{API}/repos/{repo}/git/trees/{commit_sha}?recursive=1", token)
+    cache_key = (repo, branch)
+    if cache_key in _TREE_CACHE:
+        commit_sha, tree = _TREE_CACHE[cache_key]
+    else:
+        branch_data = request_json(f"{API}/repos/{repo}/branches/{encoded}", token)
+        commit_sha = branch_data["commit"]["sha"]
+        tree = request_json(
+            f"{API}/repos/{repo}/git/trees/{commit_sha}?recursive=1", token
+        )
+        _TREE_CACHE[cache_key] = (commit_sha, tree)
     include = re.compile(component["filename_regex"])
     exclude = re.compile(component["exclude_regex"]) if component.get("exclude_regex") else None
     series = ".".join(kernel_version.split(".")[:2])
@@ -120,12 +165,15 @@ def upstream_candidates(
             continue
         if exclude and exclude.search(path):
             continue
-        compatibility = (
-            3 if kernel_version in path
-            else 2 if series in path
-            else 1 if "latest" in path.lower()
-            else 0
-        )
+        if component.get("always_latest"):
+            compatibility = 1
+        else:
+            compatibility = (
+                3 if kernel_version in path
+                else 2 if series in path
+                else 1 if "latest" in path.lower()
+                else 0
+            )
         if compatibility:
             raw = f"https://raw.githubusercontent.com/{repo}/{commit_sha}/{path}"
             candidates.append(
@@ -140,13 +188,45 @@ def resolve_component(
     candidates = upstream_candidates(component, kernel_version, token)
     if candidates:
         candidate = max(candidates, key=lambda item: item.score)
-        return {
+        upstream = {
             "repository": component["repository"],
             "path": candidate.path,
             "commit": candidate.sha,
             "url": candidate.url,
-            "origin": "upstream-compatible",
         }
+        local_port = component.get("local_port")
+        if component.get("port_for_kernel") == kernel_version and local_port:
+            path = root / local_port
+            if not path.is_file():
+                raise ResolveError(
+                    f"latest {component['name']} requires local port but it is missing: {local_port}"
+                )
+            data = path.read_bytes()
+            if not data.startswith((b"From ", b"diff --git", b"--- ")):
+                raise ResolveError(f"local port does not look like a patch: {local_port}")
+
+            # Fetch the moving branch object even when 6.16.12 needs a port.
+            # This records exactly which upstream revision the port follows and
+            # fails early if the latest patch disappears or is not a patch.
+            upstream_data = request_bytes(candidate.url, token)
+            if not upstream_data.startswith((b"From ", b"diff --git", b"--- ")):
+                raise ResolveError(
+                    f"latest upstream patch for {component['name']} is not a patch"
+                )
+            upstream |= {
+                "sha256": hashlib.sha256(upstream_data).hexdigest(),
+                "size": len(upstream_data),
+            }
+            return {
+                "repository": "zarpon/linux-charcoal-TD",
+                "path": local_port,
+                "commit": "repository-local",
+                "url": None,
+                "origin": "local-port",
+                "upstream": upstream,
+                "content_bytes": data,
+            }
+        return {**upstream, "origin": "upstream-compatible"}
     local_port = component.get("local_port")
     if local_port:
         path = root / local_port
@@ -194,7 +274,12 @@ def replace_source_entries(text: str, replacements: dict[str, str]) -> str:
         "lru_marie": r"(?m)^\s*6\.\d+(?:\.\d+)?-lru_marie-[^\s]+\.patch\s*$",
         "zram_ir": r"(?m)^\s*0001-linux[^\s]*-zram-ir-[^\s]+\.patch\s*$",
         "adios": r"(?m)^\s*6\.\d+(?:\.\d+)?-ADIOS-[^\s]+\.patch\s*$",
-        "bore": r"(?m)^\s*6\.\d+(?:\.\d+)?-bore-[^\s]+\.patch\s*$",
+        "infinity_core": r"(?m)^\s*6\.16\.12-infinity-0001[^\s]*\.patch\s*$",
+        "infinity_cpu": r"(?m)^\s*6\.16\.12-infinity-0002[^\s]*\.patch\s*$",
+        "infinity_rt": r"(?m)^\s*6\.16\.12-infinity-0003[^\s]*\.patch\s*$",
+        "infinity_gpu_headers": r"(?m)^\s*6\.16\.12-infinity-0004[^\s]*\.patch\s*$",
+        "infinity_gpu_vtime": r"(?m)^\s*6\.16\.12-infinity-0005[^\s]*\.patch\s*$",
+        "infinity_gpu_cleanup": r"(?m)^\s*6\.16\.12-infinity-0006[^\s]*\.patch\s*$",
         "poc_selector": r"(?m)^\s*6\.\d+(?:\.\d+)?-poc-selector-[^\s]+\.patch\s*$",
         "nap": r"(?m)^\s*6\.\d+(?:\.\d+)?-nap-v?[^\s]+\.patch\s*$",
     }

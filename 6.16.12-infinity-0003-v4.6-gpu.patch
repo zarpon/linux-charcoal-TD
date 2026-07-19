@@ -1,0 +1,80 @@
+--- a/kernel/sched/rt.c
++++ b/kernel/sched/rt.c
+@@ -1012,6 +1012,9 @@
+ 	if (unlikely(delta_exec <= 0))
+ 		return;
+ 
++	/* Infinity: RT EMA climbs with runtime for adaptive RR timeslice */
++	infinity_rt_consume(&donor->infinity, delta_exec);
++
+ #ifdef CONFIG_RT_GROUP_SCHED
+ 	struct sched_rt_entity *rt_se = &donor->rt;
+ 
+@@ -1480,9 +1483,18 @@
+ {
+ 	struct sched_rt_entity *rt_se = &p->rt;
+ 
+-	if (flags & ENQUEUE_WAKEUP)
++	if (flags & ENQUEUE_WAKEUP) {
+ 		rt_se->timeout = 0;
+ 
++		/* Infinity: RR EMA decay on wakeup for adaptive timeslice */
++		if (p->infinity.rt_last_sleep_ns) {
++			u64 now = rq_clock(rq);
++			if (now > p->infinity.rt_last_sleep_ns)
++				infinity_rt_wakeup(&p->infinity,
++					now - p->infinity.rt_last_sleep_ns);
++		}
++	}
++
+ 	check_schedstat_required();
+ 	update_stats_wait_start_rt(rt_rq_of_se(rt_se), rt_se);
+ 
+@@ -1499,6 +1511,10 @@
+ 	update_curr_rt(rq);
+ 	dequeue_rt_entity(rt_se, flags);
+ 
++	/* Infinity: record sleep timestamp for RR EMA decay */
++	if ((flags & DEQUEUE_SLEEP) && p)
++		p->infinity.rt_last_sleep_ns = rq_clock(rq);
++
+ 	dequeue_pushable_task(rq, p);
+ 
+ 	return true;
+@@ -2570,6 +2586,16 @@
+ 
+ 	watchdog(rq, p);
+ 
++	/* Infinity: force a rogue SCHED_FIFO to yield within the RT class.
++	 * Kernel threads (migration, watchdog, IRQ handlers) are exempt. */
++	if (p->policy != SCHED_RR &&
++	    !(p->flags & PF_KTHREAD) &&
++	    p->infinity.rt_ema >= INFINITY_RT_DEMOTE_THRESHOLD) {
++		requeue_task_rt(rq, p, 0);
++		resched_curr(rq);
++		return;
++	}
++
+ 	/*
+ 	 * RR tasks need a special form of time-slice management.
+ 	 * FIFO tasks have no timeslices.
+@@ -2580,7 +2606,7 @@
+ 	if (--p->rt.time_slice)
+ 		return;
+ 
+-	p->rt.time_slice = sched_rr_timeslice;
++	p->rt.time_slice = infinity_rr_timeslice(p, sched_rr_timeslice);
+ 
+ 	/*
+ 	 * Requeue to the end of queue if we (and all of our ancestors) are not
+--- a/kernel/sched/build_policy.c
++++ b/kernel/sched/build_policy.c
+@@ -44,6 +44,7 @@
+ #include "autogroup.h"
+ #include "stats.h"
+ #include "pelt.h"
++#include "infinity_sched.h"
+ 
+ /* Source code modules: */
+ 
+

@@ -61,11 +61,44 @@ jobs:
           bash -n PKGBUILD
           grep -Fq 'patches/testing/0001-linux6.16.12-lru_marie-' logs/patch-lock.json
           grep -Fq 'latest-adios.patch' PKGBUILD
-          grep -Fq 'latest-bore.patch' PKGBUILD
           grep -Fq 'latest-lru_marie.patch' PKGBUILD
           grep -Fq 'latest-zram-ir.patch' PKGBUILD
           grep -Fq 'latest-poc-selector.patch' PKGBUILD
           grep -Fq 'latest-nap.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0001.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0002.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0003.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0004.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0005.patch' PKGBUILD
+          grep -Fq 'latest-infinity-0006.patch' PKGBUILD
+          ! grep -Fq 'latest-bore.patch' PKGBUILD
+          ! grep -Fq 'drm_sched_rr_default.patch' PKGBUILD
+          python3 - <<'PY'
+          import json
+          import re
+
+          with open("logs/patch-lock.json", encoding="utf-8") as handle:
+              lock = json.load(handle)
+
+          for item in lock["components"].values():
+              assert re.fullmatch(r"[0-9a-f]{64}", item["sha256"])
+              assert item["size"] > 0
+
+          for name in (
+              "infinity_core",
+              "infinity_cpu",
+              "infinity_rt",
+              "infinity_gpu_headers",
+              "infinity_gpu_vtime",
+              "infinity_gpu_cleanup",
+          ):
+              item = lock["components"][name]
+              upstream = item.get("upstream")
+              assert item["origin"] == "local-port"
+              assert upstream and upstream["repository"] == "galpt/infinity-scheduler"
+              assert upstream["commit"]
+              assert re.fullmatch(r"[0-9a-f]{64}", upstream["sha256"])
+          PY
 
       - name: Build Docker image
         run: docker build . -t charcoal 2>&1 | tee logs/docker-build.log
@@ -146,6 +179,12 @@ jobs:
               commit = item.get("commit", "unknown")
               if origin == "local-port":
                   detail = f"6.16.12 local port ({path})"
+                  upstream = item.get("upstream")
+                  if upstream:
+                      detail += (
+                          f" following {upstream.get('repository')}"
+                          f"/{upstream.get('path')}@{upstream.get('commit')}"
+                      )
               else:
                   detail = f"latest compatible upstream patch ({path})"
               print(f"- **{name}**: {detail}; source commit `{commit}`.")
