@@ -195,9 +195,12 @@ jobs:
             echo "- Kernel source: \`${KERNEL_TAG}\`"
             echo
             echo "## Changes in the repository"
-            if [[ -n "$previous" ]]; then
-              git log --pretty='- %s (%h)' "$previous"..HEAD
+            if [[ -n "$previous" ]] && git rev-parse --verify --quiet "${previous}^{commit}" >/dev/null; then
+              git log --pretty='- %s (%h)' "${previous}..HEAD"
             else
+              if [[ -n "$previous" ]]; then
+                echo "- Previous release ref `${previous}` is not present in this checkout; showing recent commits."
+              fi
               git log -20 --pretty='- %s (%h)'
             fi
           } > logs/release-notes.md
