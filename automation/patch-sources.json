@@ -21,6 +21,7 @@
       "target": "latest-zram-ir.patch",
       "filename_regex": "(?i)^patches/0001-linux\\d+\\.\\d+(?:\\.\\d+)?(?:\\.y)?-zram-ir-[0-9.]+\\.patch$",
       "kernel_version_regex": "(?i)linux(?P<kernel>\\d+\\.\\d+(?:\\.\\d+)?)",
+      "port_for_kernel": "6.16.12",
       "port_when_incompatible": true,
       "local_port": "0001-linux6.16.12-zram-ir-1.2.patch"
     },
