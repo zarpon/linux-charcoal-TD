@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 'validation/**'
   pull_request:
     branches:
       - master
@@ -337,7 +338,7 @@ jobs:
           sha256sum "${RELEASE_ZIP}" | tee logs/RELEASE-ZIP-SHA256SUM
 
       - name: Upload test artifacts
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || startsWith(github.ref_name, 'validation/')
         uses: actions/upload-artifact@v4
         with:
           name: linux-charcoal-packages-${{ env.PKGVER }}
