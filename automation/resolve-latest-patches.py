@@ -154,6 +154,7 @@ def upstream_candidates(
         tree = request_json(
             f"{API}/repos/{repo}/git/trees/{commit_sha}?recursive=1", token
         )
+        # Refuse an incomplete GitHub tree so the latest patch selection is exhaustive.
         if tree.get("truncated"):
             raise ResolveError(
                 f"GitHub tree for {repo}@{branch} was truncated; refusing to select a non-exhaustive patch set"
