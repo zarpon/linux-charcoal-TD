@@ -80,9 +80,37 @@ jobs:
           with open("logs/patch-lock.json", encoding="utf-8") as handle:
               lock = json.load(handle)
 
-          for item in lock["components"].values():
+          expected_repositories = {
+              "lru_marie": "firelzrd/lru_marie",
+              "zram_ir": "firelzrd/zram-ir",
+              "adios": "firelzrd/adios",
+              "infinity_core": "galpt/infinity-scheduler",
+              "infinity_cpu": "galpt/infinity-scheduler",
+              "infinity_rt": "galpt/infinity-scheduler",
+              "infinity_gpu_headers": "galpt/infinity-scheduler",
+              "infinity_gpu_vtime": "galpt/infinity-scheduler",
+              "infinity_gpu_cleanup": "galpt/infinity-scheduler",
+              "poc_selector": "firelzrd/poc-selector",
+              "nap": "firelzrd/nap",
+          }
+
+          assert set(lock["components"]) == set(expected_repositories)
+          for name, item in lock["components"].items():
               assert re.fullmatch(r"[0-9a-f]{64}", item["sha256"])
               assert item["size"] > 0
+              assert item["origin"] in {"upstream-compatible", "local-port"}
+              if item["origin"] == "upstream-compatible":
+                  assert item["repository"] == expected_repositories[name]
+                  assert item["commit"] and item["commit"] != "repository-local"
+                  assert item["path"] and item["url"]
+              else:
+                  upstream = item.get("upstream")
+                  assert item["repository"] == "zarpon/linux-charcoal-TD"
+                  assert upstream and upstream["repository"] == expected_repositories[name]
+                  assert upstream["commit"] and upstream["commit"] != "repository-local"
+                  assert upstream["path"] and upstream["url"]
+                  assert re.fullmatch(r"[0-9a-f]{64}", upstream["sha256"])
+                  assert upstream["size"] > 0
 
           for name in (
               "infinity_core",
@@ -93,11 +121,18 @@ jobs:
               "infinity_gpu_cleanup",
           ):
               item = lock["components"][name]
-              upstream = item.get("upstream")
               assert item["origin"] == "local-port"
-              assert upstream and upstream["repository"] == "galpt/infinity-scheduler"
-              assert upstream["commit"]
-              assert re.fullmatch(r"[0-9a-f]{64}", upstream["sha256"])
+              assert item["selection"] == "latest-upstream-port"
+
+          assert lock["components"]["adios"]["selection"] in {
+              "upstream-compatible", "nearest-upstream-port"
+          }
+          assert lock["components"]["poc_selector"]["selection"] in {
+              "upstream-compatible", "nearest-upstream-port"
+          }
+          assert lock["components"]["nap"]["selection"] in {
+              "upstream-compatible", "nearest-upstream-port"
+          }
           PY
 
       - name: Build Docker image
@@ -134,6 +169,33 @@ jobs:
               --generated logs/generated-sha256sums.txt \
               --report logs/checksum-validation.txt
             bash -n PKGBUILD
+
+            python3 - <<'PY'
+          import importlib.util
+          import re
+          from pathlib import Path
+
+          spec = importlib.util.spec_from_file_location(
+              "checksum_validation", "automation/finalize-pkgbuild-checksums.py"
+          )
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          sources = module.evaluated_array(Path("PKGBUILD"), "source")
+          checksums = module.evaluated_array(Path("PKGBUILD"), "sha256sums")
+          assert len(sources) == len(checksums), (len(sources), len(checksums))
+          assert checksums and any(checksum != "SKIP" for checksum in checksums)
+          vcs = {
+              index
+              for index, source in enumerate(sources)
+              if "git+" in source or source.startswith(("git://", "svn+", "hg+", "bzr+"))
+          }
+          for index, checksum in enumerate(checksums):
+              if checksum == "SKIP":
+                  assert index in vcs, sources[index]
+              else:
+                  assert re.fullmatch(r"[0-9a-f]{64}", checksum), sources[index]
+          print(f"sources={len(sources)} sha256={len(checksums) - sum(item == 'SKIP' for item in checksums)} vcs_skip={sum(item == 'SKIP' for item in checksums)}")
+          PY
 
             # Verify again, now against real SHA-256 values, before prepare/build.
             makepkg --verifysource 2>&1 | tee logs/verifysource.log
