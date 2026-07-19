@@ -279,6 +279,14 @@ def resolve_component(
         candidate = max(candidates, key=selection_key)
         use_local_port = bool(local_port)
         selection = "latest-upstream-port" if use_local_port else "latest-upstream"
+    elif component.get("port_for_kernel") == kernel_version:
+        candidate = max(compatible, key=selection_key) if compatible else nearest_candidate(candidates, kernel_version)
+        if not candidate or not local_port or not component.get("port_when_incompatible"):
+            raise ResolveError(
+                f"approved port for {component['name']} is unavailable for {kernel_version}"
+            )
+        use_local_port = True
+        selection = "upstream-port"
     elif compatible:
         candidate = max(compatible, key=selection_key)
         use_local_port = False
