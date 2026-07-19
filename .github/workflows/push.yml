@@ -199,7 +199,7 @@ jobs:
               git log --pretty='- %s (%h)' "${previous}..HEAD"
             else
               if [[ -n "$previous" ]]; then
-                echo "- Previous release ref `${previous}` is not present in this checkout; showing recent commits."
+                echo "- Previous release ref \`${previous}\` is not present in this checkout; showing recent commits."
               fi
               git log -20 --pretty='- %s (%h)'
             fi
