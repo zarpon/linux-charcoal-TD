@@ -407,18 +407,60 @@ jobs:
 
       - name: Publish GitHub release
         if: github.event_name == 'push' && github.ref_name == 'master'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -Eeuo pipefail
-          git tag "$RELEASE_TAG" "$GITHUB_SHA"
-          git push origin "$RELEASE_TAG"
-          gh release create "$RELEASE_TAG" \
+          shopt -s nullglob
+
+          packages=(linux-charcoal-*.pkg.tar.zst)
+          if ((${#packages[@]} == 0)); then
+            echo "No kernel packages are available for the release" >&2
+            exit 1
+          fi
+          assets=(
+            "${RELEASE_ZIP}"
+            logs/RELEASE-ZIP-SHA256SUM
+            "${packages[@]}"
+          )
+          for asset in "${assets[@]}"; do
+            if [[ ! -f "$asset" ]]; then
+              echo "Release asset is missing: $asset" >&2
+              exit 1
+            fi
+          done
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            git fetch --force origin "+refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+            existing_tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [[ "$existing_tag_commit" != "$GITHUB_SHA" ]]; then
+              echo "Remote tag ${RELEASE_TAG} points to ${existing_tag_commit}, expected ${GITHUB_SHA}" >&2
+              exit 1
+            fi
+            echo "Reusing existing release tag ${RELEASE_TAG}"
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/${RELEASE_TAG}"
+          fi
+
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$RELEASE_TAG" \
+              --notes-file logs/release-notes.md
+          else
+            gh release create "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$RELEASE_TAG" \
+              --notes-file logs/release-notes.md \
+              --verify-tag
+          fi
+
+          gh release upload "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            "${RELEASE_ZIP}" \
-            logs/RELEASE-ZIP-SHA256SUM \
-            linux-charcoal-*.pkg.tar.zst \
-            --title "$RELEASE_TAG" \
-            --notes-file logs/release-notes.md \
-            --verify-tag
+            --clobber \
+            "${assets[@]}"
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY"
 
       - name: Upload validation logs
         if: always()
