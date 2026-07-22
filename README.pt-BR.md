@@ -92,9 +92,15 @@ curl -fsSL https://raw.githubusercontent.com/zarpon/linux-charcoal-TD/master/ins
 O instalador sempre obtém a [última release
 publicada](https://github.com/zarpon/linux-charcoal-TD/releases/latest). Antes
 de chamar o `pacman`, ele verifica o SHA-256 do ZIP da release e o SHA-256 de
-cada pacote interno. Ele instala os pacotes do kernel e dos headers Charcoal e
-restaura o modo somente leitura do SteamOS mesmo se a transação do pacote
-falhar.
+cada pacote interno. Em seguida, ativa o modo de desenvolvedor do SteamOS sem
+interação para inicializar o `pacman`, instala os pacotes do kernel e dos
+headers Charcoal e atualiza a configuração do bootloader. A ordem de
+preferência é `grub-mkconfig`, `steamos-update-grub` e `update-grub`; se nenhum
+estiver disponível, o instalador não informa sucesso.
+
+O modo de desenvolvedor permanece ativado após a instalação; somente o sistema
+de arquivos raiz do SteamOS volta ao modo somente leitura, inclusive quando a
+transação do pacote ou a atualização do bootloader falhar.
 
 Confirme a substituição de `linux-neptune` se o pacman solicitar. Depois,
 reinicie e confira:

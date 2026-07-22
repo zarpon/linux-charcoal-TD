@@ -32,6 +32,24 @@ run_privileged() {
   fi
 }
 
+_update_grub() {
+  local steamos_efi_dir=${1:-/efi/EFI/steamos}
+
+  if command -v grub-mkconfig >/dev/null 2>&1; then
+    if [[ -d "$steamos_efi_dir" ]]; then
+      run_privileged grub-mkconfig -o "$steamos_efi_dir/grub.cfg"
+    else
+      run_privileged grub-mkconfig -o /boot/grub/grub.cfg
+    fi
+  elif command -v steamos-update-grub >/dev/null 2>&1; then
+    run_privileged steamos-update-grub
+  elif command -v update-grub >/dev/null 2>&1; then
+    run_privileged update-grub
+  else
+    die "No supported bootloader update command found; update the bootloader manually before rebooting"
+  fi
+}
+
 cleanup() {
   local exit_status=$?
   trap - EXIT
@@ -245,6 +263,7 @@ main() {
   require_command mktemp
   require_command pacman
   require_command steamos-readonly
+  require_command steamos-devmode
   if (( EUID != 0 )); then
     require_command sudo
   fi
@@ -304,8 +323,14 @@ main() {
   run_privileged steamos-readonly disable
   MADE_ROOT_WRITABLE=1
 
+  info "Enabling SteamOS developer mode..."
+  run_privileged steamos-devmode enable --no-prompt
+
   info "Installing ${release_tag}. Confirm the replacement of linux-neptune when pacman asks."
   run_privileged pacman -U --needed "${packages[@]}"
+
+  info "Updating the bootloader configuration..."
+  _update_grub
 
   info "Charcoal ${release_tag} was installed successfully. Reboot, then verify with: uname -r"
 }
