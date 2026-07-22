@@ -61,15 +61,16 @@ Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other A
 
 ## Install
 
-Download the [latest release](https://github.com/V10lator/linux-charcoal/releases/latest) and run the following on your device:
+Use the installer below on SteamOS. It always queries the [latest Charcoal Release](https://github.com/zarpon/linux-charcoal-TD/releases/latest), downloads its package ZIP and SHA-256 checksum, validates both the archive and every package, then installs all Charcoal packages. It temporarily disables the SteamOS read-only mode only when necessary and restores its prior state even if the package transaction fails.
 
 ```bash
-cd ~/Downloads
-sudo steamos-readonly disable
-sudo pacman -U linux-charcoal-*-x86_64.pkg.tar.zst  # Confirm when asked to remove linux-neptune-*
-sudo steamos-readonly enable
-rm linux-charcoal*
+curl -fsSLo /tmp/charcoal-install.sh \
+  https://raw.githubusercontent.com/zarpon/linux-charcoal-TD/master/install-latest-release.sh && \
+  sudo bash /tmp/charcoal-install.sh && \
+  rm -f /tmp/charcoal-install.sh
 ```
+
+The installer replaces the stock `linux-neptune-616` package as required by the Charcoal package metadata. It requires an `x86_64` SteamOS installation and `curl`, `python3`, `sha256sum`, `pacman`, and `steamos-readonly`, which are present on a standard SteamOS desktop installation.
 
 Reboot and verify with:
 

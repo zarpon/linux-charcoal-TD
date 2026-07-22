@@ -53,6 +53,9 @@ jobs:
             sudo apt-get install -y zip
           fi
 
+      - name: Validate latest-release installer
+        run: bash tests/test-install-latest-release.sh
+
       - name: Resolve latest compatible SteamOS patches
         run: |
           set -Eeuo pipefail
