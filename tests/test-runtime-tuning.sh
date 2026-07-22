@@ -174,7 +174,7 @@ EOF
   require_value "$rootfs/sys/kernel/mm/transparent_hugepage/shmem_enabled" "advise"
   require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/defrag" "0"
   require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none" "409"
-  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_swap" "64"
+  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_swap" "16"
   require_value "$rootfs/sys/kernel/mm/ksm/run" "0"
   require_value "$rootfs/sys/kernel/mm/lru_gen/enabled" "7"
   require_value "$rootfs/sys/kernel/mm/lru_gen/min_ttl_ms" "0"
