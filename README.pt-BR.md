@@ -5,7 +5,7 @@ Antes de instalar, por favor verifique se você está no canal estável de insta
 
 [English](README.md)
 
-O Charcoal é um pacote de kernel experimental para Steam Deck, Asus ROG Ally e
+O Charcoal Vulcano é um pacote de kernel experimental para Steam Deck, Asus ROG Ally e
 outros PCs portáteis AMD. Ele é construído a partir do
 [`linux-neptune`](https://gitlab.steamos.cloud/jupiter/linux-integration) da
 Valve, com um conjunto de alterações de agendamento, memória, I/O, Wi-Fi e
