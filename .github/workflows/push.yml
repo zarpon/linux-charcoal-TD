@@ -53,6 +53,11 @@ jobs:
             sudo apt-get install -y zip
           fi
 
+      - name: Validate runtime tuning payload
+        run: |
+          set -Eeuo pipefail
+          bash tests/test-runtime-tuning.sh
+
       - name: Resolve latest compatible SteamOS patches
         run: |
           set -Eeuo pipefail

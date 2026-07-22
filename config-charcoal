@@ -16,6 +16,12 @@ CONFIG_CPU_SUP_ZHAOXIN=n
 # Enable lru_marie 
 CONFIG_LRU_MARIE=y
 
+# ZRAM-IR: LZ4 is the primary SteamOS swap compressor. The packaged udev
+# helper configures ZSTD as the priority-1 recompressor before zram is sized.
+CONFIG_ZRAM_DEF_COMP_LZ4=y
+# CONFIG_ZRAM_DEF_COMP_ZSTD is not set
+CONFIG_ZRAM_DEF_COMP="lz4"
+
 # ALSA tuning
 CONFIG_SND_CTL_INPUT_VALIDATION=n
 

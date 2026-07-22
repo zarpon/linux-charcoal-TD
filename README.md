@@ -23,6 +23,7 @@ Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other A
 - Add [ADIOS](https://github.com/firelzrd/adios) - adaptive I/O scheduler tuned for responsiveness
 - Add [re-swappiness](https://github.com/firelzrd/re-swappiness) - fixes broken vm.swappiness behavior under MGLRU (without this patch, the kernel effectively ignores the swappiness value)
 - Add [zram-ir](https://github.com/firelzrd/zram-ir) - tries multiple compression algorithms immediately on write so pages get the best ratio without waiting for background recompression
+- Configure each zram device automatically before it is initialized: LZ4 primary compression and ZSTD recompression at priority 1, without resetting an active swap device
 - Add [kcompressd-unofficial](https://github.com/firelzrd/kcompressd-unofficial) - dedicated zram compression thread
 - Add [POC-Selector](https://github.com/firelzrd/poc-selector) - O(1) idle CPU lookup replacing the default linear scan hot path
 - Add [Nap](https://github.com/firelzrd/nap) - neural network CPUIdle governor that predicts optimal idle states per-CPU

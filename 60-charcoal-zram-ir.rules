@@ -1,0 +1,5 @@
+# Configure ZRAM-IR before SteamOS initializes a zram device's disksize.
+# The helper is also called on change events, but never resets an initialized
+# device or active swap.
+ACTION=="add", SUBSYSTEM=="block", KERNEL=="zram[0-9]*", RUN+="/usr/lib/charcoal/configure-zram-ir %k"
+ACTION=="change", SUBSYSTEM=="block", KERNEL=="zram[0-9]*", RUN+="/usr/lib/charcoal/configure-zram-ir %k"

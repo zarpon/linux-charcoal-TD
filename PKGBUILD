@@ -68,7 +68,11 @@ source=(
   config-charcoal # Charcoal: The Charcoal kernel fragment file
   charcoal.conf
   99-charcoal-sysctl.conf
+  99-charcoal-memory.conf
+  99-charcoal-gaming.conf
   65-adios.rules
+  60-charcoal-zram-ir.rules
+  configure-zram-ir
   99-charcoal.sh
   vangogh_allow_higher_cpu_freq.patch
   vangogh_higher_max_power_limit.patch
@@ -118,11 +122,15 @@ sha256sums=(
   'SKIP'
   '37452b4d09e5e42134ae24a61f2f656790837c327268074cf79d7dab3558b972'
   'd88eaf0f94bae470040e4882f334c05b1bb2ab0a99e4b7299aa0b2337810ab8d'
-  '1eccf2c67f1c35f43234cafe9f46f1dde26d54f9df93b0d49aee23dbaafc85e4'
+  'c2d82c35879de169d5ba0304518bea1e26a72c2a451ff422c5e523d42d7b981a'
   'b831de1b98a2f77f636f4780e37ebfcb3a6829f94f5423eb04c4b26e64ac43b8'
-  '161d8bfa735b1c7143207e8ae900438e41bd9f9e2f0a55463d4c04fc70c57f39'
+  'dfa2c21c573c6671da9d7c3bbf231ec5026465f785077e5818f2ca1dfd3f1016'
+  '1863e8dd9137a8465c9863b40889f4aa6176382442bfb969aa38d77f5efd9226'
+  '6e71f4ef06f4e40053ac530d0000669bcf65db6e3992ccee54f0c61f8ba04ec6'
   '52cbbf41450806d766260bc4f1ea055f6f9fdd55d37ad831840b16d505beb0cc'
-  '0a6a7408ccc0c94b5cce50dabc7ee318abcc1b9eaaedd3d83fd7e7d5a73b4d4f'
+  '35fc7647671b1ab412804143a0585dde8d9880097c06feb520f90680780ac5e5'
+  'df210035887ec1a493b6047dc703a11648a88ed31023c2510491b75d0254ca48'
+  '1f7df01db0bcd7c18230878003466ac3f651f8f21e74323b7e8178871d824f74'
   '375c8e17daf9e60bc6c211dd73f0c67ec241bd40a83d812a08eeb42aab6128d9'
   '1c49146dc5878bfab32b331d11cb66d493670bbe590ff07c2050305911c281c3'
   '57420d0609b59ea7d9fc30da201fcf3c0ce13a601068a543acc073d85c369bc4'
@@ -272,8 +280,19 @@ _package() {
   install -D -m 0644 -t "$pkgdir/etc/modprobe.d" ../charcoal.conf
   # Charcoal: Install environment file (currently workaround for xpadneo)
   install -D -m 0644 -t "$pkgdir/etc/profile.d" ../99-charcoal.sh
+  # Charcoal: persistent runtime defaults for SteamOS sessions and kernel memory.
+  install -D -m 0644 ../99-charcoal-sysctl.conf \
+    "$pkgdir/usr/lib/sysctl.d/99-charcoal.conf"
+  install -D -m 0644 ../99-charcoal-memory.conf \
+    "$pkgdir/usr/lib/tmpfiles.d/99-charcoal-memory.conf"
+  install -D -m 0644 ../99-charcoal-gaming.conf \
+    "$pkgdir/usr/lib/environment.d/99-charcoal-gaming.conf"
   # Charcoal: Install udev rules
   install -D -m 0644 -t "$pkgdir/etc/udev/rules.d" ../65-adios.rules
+  install -D -m 0644 ../60-charcoal-zram-ir.rules \
+    "$pkgdir/usr/lib/udev/rules.d/60-charcoal-zram-ir.rules"
+  install -D -m 0755 ../configure-zram-ir \
+    "$pkgdir/usr/lib/charcoal/configure-zram-ir"
 
   # Charcoal: Install bundles DKMS modules
   ZSTD_CLEVEL=19 _make_llvm M=../ryzen_smu INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 DEPMOD=/doesnt/exist modules_install
@@ -412,4 +431,3 @@ for _p in "${pkgname[@]}"; do
 done
 
 # vim:set ts=8 sts=2 sw=2 et:
-

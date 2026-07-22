@@ -1,0 +1,63 @@
+#!/bin/sh
+# Configure ZRAM-IR for SteamOS before zram's disksize initializes the device.
+set -eu
+
+name="${1:-}"
+case "$name" in
+  zram[0-9]*) ;;
+  *) exit 0 ;;
+esac
+
+# The override roots allow the shipped helper to be exercised against a fake
+# sysfs/procfs tree during build validation. udev does not set either variable.
+sys_root="${CHARCOAL_SYS_ROOT:-/sys}"
+proc_sys_root="${CHARCOAL_PROC_SYS_ROOT:-/proc/sys}"
+sys="$sys_root/block/$name"
+
+[ -d "$sys" ] || exit 0
+
+log_notice() {
+  if command -v logger >/dev/null 2>&1; then
+    logger -t charcoal-zram-ir -- "$*"
+  fi
+}
+
+# ZRAM-IR's value 1 makes the write path try priority 0 and priority 1.
+# The kernel patch defaults it to 1, but this reasserts it whenever zram appears
+# after an early systemd-sysctl pass that ran before the module was loaded.
+if [ -w "$proc_sys_root/vm/zram_recomp_immediate" ]; then
+  printf '%s\n' 1 > "$proc_sys_root/vm/zram_recomp_immediate"
+fi
+
+# Compressor choice is immutable after the zram disksize is set. A change event
+# may be emitted for a live swap device, so preserve it instead of resetting it.
+if [ "$(cat "$sys/initstate" 2>/dev/null || printf 1)" != 0 ]; then
+  log_notice "$name already initialized; preserving its active compressor setup"
+  exit 0
+fi
+
+if [ ! -w "$sys/comp_algorithm" ] || ! grep -qw lz4 "$sys/comp_algorithm"; then
+  log_notice "$name does not expose lz4; ZRAM-IR setup skipped"
+  exit 0
+fi
+
+if [ ! -w "$sys/recomp_algorithm" ] || ! grep -qw zstd "$sys/recomp_algorithm"; then
+  log_notice "$name does not expose zstd recompression; ZRAM-IR setup skipped"
+  exit 0
+fi
+
+printf '%s\n' lz4 > "$sys/comp_algorithm"
+printf '%s\n' 'algo=zstd priority=1' > "$sys/recomp_algorithm"
+
+# Real sysfs shows the active algorithm in brackets. Accept the write form too
+# so the exact same helper can be tested against regular files in CI.
+is_selected() {
+  algorithm="$1"
+  path="$2"
+  grep -Eq "(^|[[:space:]])\\[${algorithm}\\]([[:space:]]|$)|(^|[[:space:]])algo=${algorithm}([[:space:]]|$)|^${algorithm}$" "$path"
+}
+
+is_selected lz4 "$sys/comp_algorithm"
+is_selected zstd "$sys/recomp_algorithm"
+
+log_notice "$name configured for ZRAM-IR: lz4 priority 0 -> zstd priority 1"
