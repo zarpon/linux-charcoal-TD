@@ -1,5 +1,5 @@
 # Charcoal SteamOS Kernel
-[![build](https://github.com/V10lator/linux-charcoal/actions/workflows/push.yml/badge.svg)](https://github.com/V10lator/linux-charcoal/actions)
+[![build](https://github.com/zarpon/linux-charcoal-TD/actions/workflows/push.yml/badge.svg)](https://github.com/zarpon/linux-charcoal-TD/actions)
 
 Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other AMD-powered handheld PCs, built on top of Valve's [linux-neptune](https://gitlab.steamos.cloud/jupiter/linux-integration). It pushes the base further - built with LLVM/LTO/Polly, optimized for Zen 2, and patched with the Infinity CPU/GPU scheduler and ADIOS. The result is a kernel tuned specifically for handheld gaming: better CPU responsiveness, improved I/O throughput, higher hardware limits, and bundled controller drivers - all without the bloat of debugging and unused features.
 
@@ -51,7 +51,7 @@ Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other A
 ### Other Changes
 - Disable sound input validation
 - Disable a lot of debugging overhead
-- Disable various unneeded features ([open a bug report](https://github.com/V10lator/linux-charcoal/issues) if something you need is missing)
+- Disable various unneeded features ([open a bug report](https://github.com/zarpon/linux-charcoal-TD/issues) if something you need is missing)
 
 ### Previously Included, Now Upstream
 - ~~Add NTSYNC~~ - Valve added it in 6.11.11-valve27
@@ -61,17 +61,15 @@ Charcoal is an optimized Linux kernel for Steam Deck, Asus ROG Ally, and other A
 
 ## Install
 
-Download the [latest release](https://github.com/V10lator/linux-charcoal/releases/latest) and run the following on your device:
+Run this in SteamOS Desktop Mode:
 
 ```bash
-cd ~/Downloads
-sudo steamos-readonly disable
-sudo pacman -U linux-charcoal-*-x86_64.pkg.tar.zst  # Confirm when asked to remove linux-neptune-*
-sudo steamos-readonly enable
-rm linux-charcoal*
+curl -fsSL https://raw.githubusercontent.com/zarpon/linux-charcoal-TD/master/install-charcoal.sh -o install-charcoal.sh && bash install-charcoal.sh
 ```
 
-Reboot and verify with:
+The installer always retrieves the [latest published release](https://github.com/zarpon/linux-charcoal-TD/releases/latest), verifies the release ZIP SHA-256 and every package SHA-256 before installation, installs both the kernel and headers packages, and restores SteamOS read-only mode even when the package transaction fails. It will request your password only when SteamOS needs to be made writable.
+
+Confirm the replacement of `linux-neptune` if pacman asks. Then reboot and verify with:
 
 ```bash
 uname -a  # Should contain "charcoal" if installation was successful
@@ -105,8 +103,8 @@ Requires Docker (provides a full Arch Linux build environment).
 
 ```bash
 # Clone the repo first (you need it for the Dockerfile)
-git clone https://github.com/V10lator/linux-charcoal
-cd linux-charcoal
+git clone https://github.com/zarpon/linux-charcoal-TD.git
+cd linux-charcoal-TD
 
 # Build the Docker image
 docker build -t linux-charcoal .
@@ -121,6 +119,6 @@ Alternatively, build with `makepkg` directly on any Arch-based system. Required 
 
 ## Contributing
 
-Bug reports and compatibility reports are welcome - open an [issue](https://github.com/V10lator/linux-charcoal/issues). If you've tested Charcoal on a device not listed above, let us know so we can update the table!
+Bug reports and compatibility reports are welcome - open an [issue](https://github.com/zarpon/linux-charcoal-TD/issues). If you've tested Charcoal on a device not listed above, let us know so we can update the table!
 
 Pull requests should target the `master` branch. For kernel config changes, please explain the reasoning and the impact.
