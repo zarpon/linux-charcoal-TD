@@ -77,11 +77,11 @@ require_line "$root/99-charcoal.sh" "export MESA_SHADER_CACHE_MAX_SIZE=10G"
 require_line "$root/99-charcoal.sh" "export MESA_DISK_CACHE_DATABASE=1"
 
 require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/enabled - - - - madvise"
-require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/defrag - - - - defer+madvise"
+require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/defrag - - - - defer"
 require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/shmem_enabled - - - - advise"
 require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/khugepaged/defrag - - - - 0"
-require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none - - - - 409"
-require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_swap - - - - 16"
+require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none - - - - 64"
+require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_swap - - - - 0"
 require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/ksm/run - - - - 0"
 require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/lru_gen/enabled - - - - 7"
 require_line "$root/99-charcoal-memory.conf" "w! /sys/kernel/mm/lru_gen/min_ttl_ms - - - - 0"
@@ -170,14 +170,80 @@ if command -v systemd-tmpfiles >/dev/null 2>&1; then
 EOF
   systemd-tmpfiles --create --boot --root="$rootfs"
   require_value "$rootfs/sys/kernel/mm/transparent_hugepage/enabled" "madvise"
-  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/defrag" "defer+madvise"
+  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/defrag" "defer"
   require_value "$rootfs/sys/kernel/mm/transparent_hugepage/shmem_enabled" "advise"
   require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/defrag" "0"
-  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none" "409"
-  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_swap" "16"
+  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none" "64"
+  require_value "$rootfs/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_swap" "0"
   require_value "$rootfs/sys/kernel/mm/ksm/run" "0"
   require_value "$rootfs/sys/kernel/mm/lru_gen/enabled" "7"
   require_value "$rootfs/sys/kernel/mm/lru_gen/min_ttl_ms" "0"
 fi
+
+# Deterministic admission-control simulation for one 2 MiB x86 THP. This is
+# not a hardware FPS benchmark: it proves that the shipped limits preserve a
+# dense 64-hole candidate while excluding the sparse and swapped candidates
+# that could add allocation or swap-in work to khugepaged.
+python3 - "$root/99-charcoal-memory.conf" <<'PY'
+from dataclasses import dataclass
+from pathlib import Path
+import sys
+
+PTE_PER_THP = 512
+PAGE_SIZE = 4096
+
+
+def tmpfiles_values(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        fields = raw_line.split()
+        if len(fields) == 7 and fields[0] == "w!":
+            values[fields[1]] = fields[-1]
+    return values
+
+
+@dataclass(frozen=True)
+class Policy:
+    max_none: int
+    max_swap: int
+
+
+def eligible(policy: Policy, *, none: int, swap: int) -> bool:
+    present = PTE_PER_THP - none - swap
+    assert present >= 0
+    return none <= policy.max_none and swap <= policy.max_swap
+
+
+values = tmpfiles_values(Path(sys.argv[1]))
+assert values["/sys/kernel/mm/transparent_hugepage/defrag"] == "defer"
+proposed = Policy(
+    max_none=int(values["/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none"]),
+    max_swap=int(values["/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_swap"]),
+)
+assert proposed == Policy(max_none=64, max_swap=0)
+
+legacy = Policy(max_none=409, max_swap=16)
+assert eligible(legacy, none=64, swap=0)
+assert eligible(proposed, none=64, swap=0)
+assert eligible(legacy, none=409, swap=0)
+assert not eligible(proposed, none=409, swap=0)
+assert eligible(legacy, none=0, swap=16)
+assert not eligible(proposed, none=0, swap=16)
+
+legacy_zero_fill = legacy.max_none * PAGE_SIZE
+proposed_zero_fill = proposed.max_none * PAGE_SIZE
+legacy_swap_bytes = legacy.max_swap * PAGE_SIZE
+proposed_swap_bytes = proposed.max_swap * PAGE_SIZE
+assert legacy_zero_fill - proposed_zero_fill == 1_413_120
+assert legacy_swap_bytes - proposed_swap_bytes == 65_536
+
+print(
+    "THP admission simulation passed: zero-fill cap "
+    f"{legacy_zero_fill / 1024**2:.2f} MiB -> "
+    f"{proposed_zero_fill / 1024**2:.2f} MiB; "
+    f"swap candidate cap {legacy_swap_bytes // 1024} KiB -> "
+    f"{proposed_swap_bytes // 1024} KiB"
+)
+PY
 
 echo "runtime tuning validation passed"
