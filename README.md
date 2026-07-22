@@ -1,4 +1,4 @@
-# Charcoal SteamOS Kernel
+# Charcoal SteamOS Kernel - Vulcano Edition 
 
 [![build](https://github.com/zarpon/linux-charcoal-TD/actions/workflows/push.yml/badge.svg)](https://github.com/zarpon/linux-charcoal-TD/actions)
 
