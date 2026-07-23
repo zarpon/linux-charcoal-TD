@@ -1,0 +1,81 @@
+name: Force cancel all pre-existing workflow runs
+
+on:
+  push:
+    branches: [automation/force-cancel-runs-20260723]
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cancel:
+    name: Force cancel pre-existing runs
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SELF_RUN_ID: ${{ github.run_id }}
+    steps:
+      - name: Cancel every active run except this cleanup run
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs?per_page=100"
+          mapfile -t run_ids < <(
+            curl --silent --show-error --fail \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "Accept: application/vnd.github+json" \
+              "${api}" |
+              jq -r --arg self "${SELF_RUN_ID}" '
+                .workflow_runs[]
+                | select((.id | tostring) != $self)
+                | select(.status == "queued" or .status == "in_progress" or .status == "waiting" or .status == "pending" or .status == "requested")
+                | .id
+              '
+          )
+
+          failures=0
+          for run_id in "${run_ids[@]}"; do
+            [ -n "${run_id}" ] || continue
+            cancelled=0
+
+            for endpoint in cancel force-cancel; do
+              for attempt in 1 2 3 4 5; do
+                status="$(
+                  curl --silent --show-error \
+                    --output "/tmp/${endpoint}-${run_id}.json" \
+                    --write-out '%{http_code}' \
+                    --request POST \
+                    --header "Authorization: Bearer ${GH_TOKEN}" \
+                    --header "Accept: application/vnd.github+json" \
+                    "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/${endpoint}" ||
+                  true
+                )"
+                case "${status}" in
+                  202|204|404|409)
+                    echo "${endpoint} accepted for run ${run_id} (HTTP ${status})."
+                    cancelled=1
+                    break
+                    ;;
+                  500|502|503|504)
+                    echo "Transient HTTP ${status} from ${endpoint} for run ${run_id}; retry ${attempt}/5."
+                    sleep 5
+                    ;;
+                  *)
+                    echo "${endpoint} did not cancel run ${run_id} (HTTP ${status})."
+                    cat "/tmp/${endpoint}-${run_id}.json" 2>/dev/null || true
+                    break
+                    ;;
+                esac
+              done
+              [ "${cancelled}" -eq 1 ] && break
+            done
+
+            if [ "${cancelled}" -ne 1 ]; then
+              failures=1
+            fi
+          done
+
+          [ "${failures}" -eq 0 ]
