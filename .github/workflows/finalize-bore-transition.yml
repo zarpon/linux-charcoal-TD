@@ -1,0 +1,177 @@
+name: Finalize validated BORE transition
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.head_ref == 'agent/replace-infinity-with-bore-6.6.3'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out transition branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Reconstruct the locally validated BORE port
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          workspace="$GITHUB_WORKSPACE"
+          kernel_dir="$RUNNER_TEMP/valve-linux"
+          bore_dir="$RUNNER_TEMP/bore-scheduler"
+          upstream_patch="$bore_dir/patches/stable/linux-6.18-bore/0001-linux6.18.22-bore-6.6.3.patch"
+
+          git clone --filter=blob:none https://github.com/evlaV/linux-integration.git "$kernel_dir"
+          git -C "$kernel_dir" checkout --detach c2906d864ef984ecdc23f350e3b38ad956fd1bac
+          test "$(git -C "$kernel_dir" rev-parse HEAD)" = c2906d864ef984ecdc23f350e3b38ad956fd1bac
+
+          git clone --filter=blob:none https://github.com/firelzrd/bore-scheduler.git "$bore_dir"
+          git -C "$bore_dir" checkout --detach 16bf5baebbb42cdba393c501ba9c2af5f84e4749
+          test "$(git -C "$bore_dir" rev-parse HEAD)" = 16bf5baebbb42cdba393c501ba9c2af5f84e4749
+          echo '98b2730fba75f4d53ba4fb18d91d7ab09415feab0e828cd5b648b4471ccebe4e  '"$upstream_patch" | sha256sum -c -
+
+          cd "$kernel_dir"
+          set +e
+          git apply --reject --whitespace=nowarn "$upstream_patch"
+          apply_rc=$?
+          set -e
+          test "$apply_rc" -eq 1
+
+          mapfile -t rejects < <(find kernel/sched -maxdepth 1 -type f -name '*.rej' -printf '%f\n' | sort)
+          expected=(core.c.rej debug.c.rej fair.c.rej)
+          test "${rejects[*]}" = "${expected[*]}"
+          rm kernel/sched/*.rej
+
+          git apply --whitespace=error-all "$workspace/automation/.bore-kernel-overlay.patch"
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          files = (
+              "include/linux/sched.h",
+              "include/linux/sched/bore.h",
+              "init/Kconfig",
+              "kernel/Kconfig.hz",
+              "kernel/exit.c",
+              "kernel/fork.c",
+              "kernel/futex/waitwake.c",
+              "kernel/sched/Makefile",
+              "kernel/sched/bore.c",
+              "kernel/sched/core.c",
+              "kernel/sched/debug.c",
+              "kernel/sched/fair.c",
+              "kernel/sched/sched.h",
+          )
+          digest = hashlib.sha256()
+          for name in files:
+              digest.update(name.encode())
+              digest.update(b"\0")
+              digest.update(Path(name).read_bytes())
+              digest.update(b"\0")
+          expected = "fad88afa7d281cde1c8f51ae7c34c5aaa9f0916a401136c4b5f1f04f0239d623"
+          actual = digest.hexdigest()
+          if actual != expected:
+              raise SystemExit(f"ported source hash mismatch: {actual} != {expected}")
+          PY
+          git diff --check
+
+          git add -A
+          cat > "$RUNNER_TEMP/bore-commit-message" <<'EOF'
+          sched/bore: port BORE 6.6.3 to Valve Linux 6.16.12
+
+          Port the upstream linux6.18.22-bore-6.6.3 implementation to the
+          6.16.12-valve27 scheduler interfaces.
+
+          The functional adaptation is limited to scheduler API differences:
+          - map the 6.18 EEVDF futex protection exception to 6.16 pick_eevdf();
+          - retain the 6.16 reweight_entity() implementation while exporting it to BORE;
+          - pass enqueue flags through the 6.16 delayed-entity requeue path;
+          - preserve the 6.16 CONFIG_SMP guards around scheduler debug controls.
+
+          Upstream source: firelzrd/bore-scheduler
+          Upstream commit: 16bf5baebbb42cdba393c501ba9c2af5f84e4749
+          Upstream patch: patches/stable/linux-6.18-bore/0001-linux6.18.22-bore-6.6.3.patch
+          Target source: evlaV/linux-integration 6.16.12-valve27
+          Target commit: c2906d864ef984ecdc23f350e3b38ad956fd1bac
+          EOF
+          GIT_AUTHOR_DATE='2026-07-23T14:43:06Z' \
+          GIT_COMMITTER_DATE='2026-07-23T14:43:06Z' \
+            git -c user.name=zarpon \
+                -c user.email=zarpon@users.noreply.github.com \
+                commit --author='zarpon <zarpon@users.noreply.github.com>' \
+                -F "$RUNNER_TEMP/bore-commit-message"
+          git format-patch -1 --stdout > "$workspace/6.16.12-bore-6.6.3.patch"
+
+          git reset --hard HEAD^ >/dev/null
+          git apply --check --whitespace=error-all "$workspace/6.16.12-bore-6.6.3.patch"
+
+      - name: Apply repository transition and validate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git apply --index --whitespace=error-all automation/.bore-repository-transition.patch
+          rm -f 6.16.12-infinity-000{1,2,3,4,5,6}-v4.6-gpu.patch
+
+          patch_sha="$(sha256sum 6.16.12-bore-6.6.3.patch | awk '{print $1}')"
+          python3 - "$patch_sha" <<'PY'
+          from pathlib import Path
+          import sys
+
+          path = Path("PKGBUILD")
+          text = path.read_text()
+          old = "46692feee0cc8dae6a22f3950636fad7b7d93481349877856d03dba96e7a3093"
+          new = sys.argv[1]
+          if text.count(old) != 1:
+              raise SystemExit("expected validated local BORE checksum exactly once")
+          path.write_text(text.replace(old, new))
+          PY
+
+          rm -f \
+            automation/.bore-kernel-overlay.patch \
+            automation/.bore-repository-transition.patch \
+            .github/workflows/finalize-bore-transition.yml
+
+          grep -Fxq 'CONFIG_SCHED_BORE=y' config-charcoal
+          grep -Fxq 'CONFIG_MIN_BASE_SLICE_NS=2000000' config-charcoal
+          grep -Fq 'sched_bore                   = 1' 6.16.12-bore-6.6.3.patch
+          grep -Fq 'default y' 6.16.12-bore-6.6.3.patch
+          ! find . -maxdepth 1 -type f -iname '*infinity*.patch' -print -quit | grep -q .
+          ! grep -RFi 'infinity' README.md README.pt-BR.md automation config-charcoal PKGBUILD
+
+          bash -n PKGBUILD
+          bash -n install-charcoal.sh
+          python3 -m py_compile automation/resolve-latest-patches.py automation/finalize-release.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          json.loads(Path("automation/patch-sources.json").read_text())
+          PY
+          tests/test-install-charcoal.sh
+          tests/test-runtime-tuning.sh
+
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path("PKGBUILD").read_text()
+          source = re.search(r"(?ms)^source=\(\n(.*?)^\)$", text).group(1)
+          sums = re.search(r"(?ms)^sha256sums=\(\n(.*?)^\)$", text).group(1)
+          source_count = sum(1 for line in source.splitlines() if line.strip())
+          sum_count = sum(1 for line in sums.splitlines() if line.strip())
+          if source_count != sum_count:
+              raise SystemExit(f"source/checksum mismatch: {source_count} != {sum_count}")
+          PY
+
+          git add -A
+          git diff --cached --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m 'sched: replace Infinity with default-enabled BORE 6.6.3'
+          git push origin HEAD:${{ github.head_ref }}
