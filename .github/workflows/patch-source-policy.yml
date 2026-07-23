@@ -60,21 +60,13 @@ jobs:
 
           path = Path('PKGBUILD')
           text = path.read_text(encoding='utf-8')
-          old = '''    if [[ $src == latest-poc-selector.patch ]]; then
-              local adapted_poc="../${src%.patch}-valve-port.patch"
-              python3 "$startdir/automation/port-poc-selector.py" \\
-                "../$src" "$adapted_poc" kernel/sched/sched.h
-              patch -Np1 < "$adapted_poc"
-            else
+          if 'latest-libbpf-uninitialized.patch' in text and 'fix-libbpf-clang-warning.py' in text:
+              raise SystemExit(0)
+          anchor = '''    else
               patch -Np1 < "../$src"
             fi
           '''
-          new = '''    if [[ $src == latest-poc-selector.patch ]]; then
-              local adapted_poc="../${src%.patch}-valve-port.patch"
-              python3 "$startdir/automation/port-poc-selector.py" \\
-                "../$src" "$adapted_poc" kernel/sched/sched.h
-              patch -Np1 < "$adapted_poc"
-            elif [[ $src == latest-libbpf-uninitialized.patch ]]; then
+          replacement = '''    elif [[ $src == latest-libbpf-uninitialized.patch ]]; then
               patch -Np1 < "../$src"
               python3 "$startdir/automation/fix-libbpf-clang-warning.py" \\
                 tools/lib/bpf/elf.c
@@ -82,11 +74,9 @@ jobs:
               patch -Np1 < "../$src"
             fi
           '''
-          if new in text:
-              raise SystemExit(0)
-          if text.count(old) != 1:
-              raise SystemExit('PKGBUILD compatibility block anchor changed')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          if text.count(anchor) != 1:
+              raise SystemExit('PKGBUILD compatibility tail anchor changed')
+          path.write_text(text.replace(anchor, replacement, 1), encoding='utf-8')
           PY
           git config user.name 'TurboDecky Patch Automation'
           git config user.email 'noreply@localhost'
