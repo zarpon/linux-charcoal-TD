@@ -275,9 +275,14 @@ def resolve_github_component(
         use_local_port, selection = False, "upstream-compatible"
     else:
         candidate = nearest_candidate(candidates, kernel_version)
-        if not candidate or not local_port or not spec.get("port_when_incompatible"):
-            raise ResolveError(f"no compatible upstream patch or approved port for {spec['name']}")
-        use_local_port, selection = True, "nearest-upstream-port"
+        if candidate and spec.get("allow_nearest_upstream"):
+            use_local_port, selection = False, "nearest-upstream"
+        else:
+            if not candidate or not local_port or not spec.get("port_when_incompatible"):
+                raise ResolveError(
+                    f"no compatible upstream patch or approved port for {spec['name']}"
+                )
+            use_local_port, selection = True, "nearest-upstream-port"
 
     upstream: dict[str, Any] = {
         "repository": spec["repository"],
