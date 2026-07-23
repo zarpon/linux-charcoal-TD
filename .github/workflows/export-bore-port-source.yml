@@ -1,12 +1,12 @@
 name: Export BORE port source
 
 on:
-  push:
+  pull_request:
     branches:
-      - validation/bore-scheduler-port
+      - master
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   export-source:
@@ -15,8 +15,6 @@ jobs:
     steps:
       - name: Check out project
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Fetch target kernel scheduler files
         run: |
@@ -68,7 +66,6 @@ jobs:
             kernel/sched/sched.h
 
       - name: Upload source artifact
-        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: bore-port-inputs-6.16.12-valve27
@@ -81,17 +78,3 @@ jobs:
             bore-patches.sha256
           retention-days: 1
           if-no-files-found: error
-
-      - name: Publish artifact identifier to validation branch
-        env:
-          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
-        run: |
-          set -Eeuo pipefail
-          test -n "$ARTIFACT_ID"
-          mkdir -p .validation
-          printf '%s\n' "$ARTIFACT_ID" > .validation/bore-port-artifact-id.txt
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add .validation/bore-port-artifact-id.txt
-          git commit -m 'ci: publish BORE port input artifact id'
-          git push origin HEAD:validation/bore-scheduler-port
