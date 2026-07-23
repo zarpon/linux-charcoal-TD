@@ -52,8 +52,6 @@ jobs:
           git add \
             6.16-poc-selector-v2.6.1r2.patch \
             automation/patch-sources.json \
-            .github/workflows/push.yml \
-            .github/workflows/patch-source-policy.yml \
             PATCH-SOURCES.md
           if ! git diff --cached --quiet; then
             git diff --cached --check
