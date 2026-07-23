@@ -62,35 +62,6 @@ if validation not in workflow:
     workflow = workflow.replace(old_resolve, old_resolve + validation, 1)
 workflow_path.write_text(workflow, encoding='utf-8')
 
-policy_path = Path('.github/workflows/patch-source-policy.yml')
-policy = policy_path.read_text(encoding='utf-8')
-old_policy_compile = (
-    '          python3 -m py_compile automation/resolve-latest-patches.py '
-    'tests/test_patch_source_policy.py\n'
-)
-new_policy_compile = (
-    '          python3 -m py_compile automation/resolve-latest-patches.py '
-    'automation/validate-patch-lock.py tests/test_patch_source_policy.py '
-    'tests/test_patch_lock_validation.py\n'
-)
-if old_policy_compile in policy:
-    policy = policy.replace(old_policy_compile, new_policy_compile, 1)
-elif new_policy_compile not in policy:
-    raise SystemExit('policy workflow compile anchor changed')
-old_test = (
-    "          python3 -m unittest discover -s tests "
-    "-p 'test_patch_source_policy.py' -v\n"
-)
-new_test = (
-    "          python3 -m unittest discover -s tests "
-    "-p 'test_patch*.py' -v\n"
-)
-if old_test in policy:
-    policy = policy.replace(old_test, new_test, 1)
-elif new_test not in policy:
-    raise SystemExit('policy workflow test anchor changed')
-policy_path.write_text(policy, encoding='utf-8')
-
 docs_path = Path('PATCH-SOURCES.md')
 docs = docs_path.read_text(encoding='utf-8')
 old_docs = (
