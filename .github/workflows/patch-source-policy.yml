@@ -1,0 +1,34 @@
+name: Validate patch source policy
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - PKGBUILD
+      - automation/patch-sources.json
+      - automation/resolve-latest-patches.py
+      - tests/test_patch_source_policy.py
+      - .github/workflows/patch-source-policy.yml
+  push:
+    branches: [master]
+    paths:
+      - PKGBUILD
+      - automation/patch-sources.json
+      - automation/resolve-latest-patches.py
+      - tests/test_patch_source_policy.py
+      - .github/workflows/patch-source-policy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate resolver and patch coverage
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile automation/resolve-latest-patches.py tests/test_patch_source_policy.py
+          python3 -m unittest discover -s tests -p 'test_patch_source_policy.py' -v
