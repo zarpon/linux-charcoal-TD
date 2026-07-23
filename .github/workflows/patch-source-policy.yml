@@ -8,11 +8,11 @@ on:
       - automation/patch-sources.json
       - automation/resolve-latest-patches.py
       - automation/validate-patch-lock.py
-      - automation/refresh-reviewed-ports.sh
       - tests/test_patch_source_policy.py
       - tests/test_patch_lock_validation.py
       - PATCH-SOURCES.md
       - .github/workflows/patch-source-policy.yml
+      - .github/workflows/push.yml
   push:
     branches: [master]
     paths:
@@ -24,60 +24,18 @@ on:
       - tests/test_patch_lock_validation.py
       - PATCH-SOURCES.md
       - .github/workflows/patch-source-policy.yml
+      - .github/workflows/push.yml
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   policy:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          fetch-depth: 1
-
-      - name: Refresh reviewed ports in the audit branch
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.head_ref == 'agent/track-all-upstream-patches'
-        run: |
-          set -Eeuo pipefail
-          mkdir -p logs
-          chmod +x automation/refresh-reviewed-ports.sh
-          automation/refresh-reviewed-ports.sh 2>&1 | tee logs/refresh-reviewed-ports.log
-          {
-            git config user.name 'TurboDecky Patch Automation'
-            git config user.email 'noreply@localhost'
-            git add \
-              6.16-poc-selector-v2.6.1r2.patch \
-              automation/patch-sources.json \
-              PATCH-SOURCES.md
-            if ! git diff --cached --quiet; then
-              git diff --cached --check -- \
-                automation/patch-sources.json \
-                PATCH-SOURCES.md
-              git commit -m 'patches: refresh POC to v2.6.1r2 and guard local ports'
-              git push origin HEAD:agent/track-all-upstream-patches
-            fi
-          } 2>&1 | tee -a logs/refresh-reviewed-ports.log
-
-      - name: Upload refreshed reviewed ports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reviewed-port-refresh-output
-          path: |
-            logs/refresh-reviewed-ports.log
-            6.16-poc-selector-v2.6.1r2.patch
-            automation/patch-sources.json
-            .github/workflows/push.yml
-            PATCH-SOURCES.md
-          if-no-files-found: warn
-          retention-days: 2
-
-      - name: Validate resolver and patch coverage
+      - name: Validate resolver, lock policy and patch coverage
         run: |
           set -Eeuo pipefail
           python3 -m py_compile \
