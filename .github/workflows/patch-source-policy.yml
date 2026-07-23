@@ -62,20 +62,20 @@ jobs:
           text = path.read_text(encoding='utf-8')
           if 'latest-libbpf-uninitialized.patch' in text and 'fix-libbpf-clang-warning.py' in text:
               raise SystemExit(0)
-          anchor = '''    else
-              patch -Np1 < "../$src"
-            fi
-          '''
-          replacement = '''    elif [[ $src == latest-libbpf-uninitialized.patch ]]; then
-              patch -Np1 < "../$src"
-              python3 "$startdir/automation/fix-libbpf-clang-warning.py" \\
-                tools/lib/bpf/elf.c
-            else
-              patch -Np1 < "../$src"
-            fi
-          '''
+          anchor = '    else\n      patch -Np1 < "../$src"\n    fi\n'
+          replacement = (
+              '    elif [[ $src == latest-libbpf-uninitialized.patch ]]; then\n'
+              '      patch -Np1 < "../$src"\n'
+              '      python3 "$startdir/automation/fix-libbpf-clang-warning.py" \\\n'
+              '        tools/lib/bpf/elf.c\n'
+              '    else\n'
+              '      patch -Np1 < "../$src"\n'
+              '    fi\n'
+          )
           if text.count(anchor) != 1:
-              raise SystemExit('PKGBUILD compatibility tail anchor changed')
+              raise SystemExit(
+                  f'PKGBUILD compatibility tail anchor count={text.count(anchor)}'
+              )
           path.write_text(text.replace(anchor, replacement, 1), encoding='utf-8')
           PY
           git config user.name 'TurboDecky Patch Automation'
