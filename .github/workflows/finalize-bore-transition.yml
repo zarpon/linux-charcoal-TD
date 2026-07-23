@@ -148,13 +148,26 @@ jobs:
           ! find . -maxdepth 1 -type f -iname '*infinity*.patch' -print -quit | grep -q .
           ! grep -RFi 'infinity' README.md README.pt-BR.md automation config-charcoal PKGBUILD
 
-      - name: Validate shell and Python syntax
+      - name: Validate PKGBUILD syntax
+        shell: bash
+        run: bash -n PKGBUILD
+
+      - name: Validate installer syntax
+        shell: bash
+        run: bash -n install-charcoal.sh
+
+      - name: Validate resolver syntax
+        shell: bash
+        run: python3 -m py_compile automation/resolve-latest-patches.py
+
+      - name: Validate release finalizer syntax
+        shell: bash
+        run: python3 -m py_compile automation/finalize-release.py
+
+      - name: Validate patch source manifest
         shell: bash
         run: |
           set -Eeuo pipefail
-          bash -n PKGBUILD
-          bash -n install-charcoal.sh
-          python3 -m py_compile automation/resolve-latest-patches.py automation/finalize-release.py
           python3 - <<'PY'
           import json
           from pathlib import Path
