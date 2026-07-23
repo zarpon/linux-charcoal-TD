@@ -382,12 +382,7 @@ def replace_source_entries(text: str, replacements: dict[str, str]) -> str:
         "lru_marie": r"(?m)^\s*6\.\d+(?:\.\d+)?-lru_marie-[^\s]+\.patch\s*$",
         "zram_ir": r"(?m)^\s*0001-linux[^\s]*-zram-ir-[^\s]+\.patch\s*$",
         "adios": r"(?m)^\s*6\.\d+(?:\.\d+)?-ADIOS-[^\s]+\.patch\s*$",
-        "infinity_core": r"(?m)^\s*6\.16\.12-infinity-0001[^\s]*\.patch\s*$",
-        "infinity_cpu": r"(?m)^\s*6\.16\.12-infinity-0002[^\s]*\.patch\s*$",
-        "infinity_rt": r"(?m)^\s*6\.16\.12-infinity-0003[^\s]*\.patch\s*$",
-        "infinity_gpu_headers": r"(?m)^\s*6\.16\.12-infinity-0004[^\s]*\.patch\s*$",
-        "infinity_gpu_vtime": r"(?m)^\s*6\.16\.12-infinity-0005[^\s]*\.patch\s*$",
-        "infinity_gpu_cleanup": r"(?m)^\s*6\.16\.12-infinity-0006[^\s]*\.patch\s*$",
+        "bore": r"(?m)^\s*(?:6\.16\.12-bore-[^\s]+|latest-bore\.patch)\s*$",
         "poc_selector": r"(?m)^\s*6\.\d+(?:\.\d+)?-poc-selector-[^\s]+\.patch\s*$",
         "nap": r"(?m)^\s*6\.\d+(?:\.\d+)?-nap-v?[^\s]+\.patch\s*$",
     }

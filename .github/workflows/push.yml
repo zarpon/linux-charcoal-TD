@@ -82,13 +82,8 @@ jobs:
           grep -Fq 'latest-zram-ir.patch' PKGBUILD
           grep -Fq 'latest-poc-selector.patch' PKGBUILD
           grep -Fq 'latest-nap.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0001.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0002.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0003.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0004.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0005.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0006.patch' PKGBUILD
-          ! grep -Fq 'latest-bore.patch' PKGBUILD
+          grep -Fq 'latest-bore.patch' PKGBUILD
+          ! grep -Fqi 'infinity' PKGBUILD
           ! grep -Fq 'drm_sched_rr_default.patch' PKGBUILD
           python3 - <<'PY'
           import json
@@ -101,12 +96,7 @@ jobs:
               "lru_marie": "firelzrd/lru_marie",
               "zram_ir": "firelzrd/zram-ir",
               "adios": "firelzrd/adios",
-              "infinity_core": "galpt/infinity-scheduler",
-              "infinity_cpu": "galpt/infinity-scheduler",
-              "infinity_rt": "galpt/infinity-scheduler",
-              "infinity_gpu_headers": "galpt/infinity-scheduler",
-              "infinity_gpu_vtime": "galpt/infinity-scheduler",
-              "infinity_gpu_cleanup": "galpt/infinity-scheduler",
+              "bore": "firelzrd/bore-scheduler",
               "poc_selector": "firelzrd/poc-selector",
               "nap": "firelzrd/nap",
           }
@@ -129,17 +119,9 @@ jobs:
                   assert re.fullmatch(r"[0-9a-f]{64}", upstream["sha256"])
                   assert upstream["size"] > 0
 
-          for name in (
-              "infinity_core",
-              "infinity_cpu",
-              "infinity_rt",
-              "infinity_gpu_headers",
-              "infinity_gpu_vtime",
-              "infinity_gpu_cleanup",
-          ):
-              item = lock["components"][name]
-              assert item["origin"] == "local-port"
-              assert item["selection"] == "latest-upstream-port"
+          bore = lock["components"]["bore"]
+          assert bore["origin"] == "local-port"
+          assert bore["selection"] == "latest-upstream-port"
 
           assert lock["components"]["adios"]["selection"] in {
               "upstream-compatible", "nearest-upstream-port"

@@ -100,12 +100,7 @@ source=(
   "ath11k-upstream.patch::https://lore.kernel.org/all/20260319065608.2408179-1-reshma.rajkumar@oss.qualcomm.com/raw"
   6.16.12-ADIOS-3.2.0.patch
   "https://raw.githubusercontent.com/firelzrd/adios/d90faa7c84be86cd89a54acc610ed4cdf88347ac/patches/0002-Make-ADIOS-the-Default-I-O-scheduler.patch"
-  6.16.12-infinity-0001-v4.6-gpu.patch
-  6.16.12-infinity-0002-v4.6-gpu.patch
-  6.16.12-infinity-0003-v4.6-gpu.patch
-  6.16.12-infinity-0004-v4.6-gpu.patch
-  6.16.12-infinity-0005-v4.6-gpu.patch
-  6.16.12-infinity-0006-v4.6-gpu.patch
+  6.16.12-bore-6.6.3.patch
   "https://github.com/zen-kernel/zen-kernel/commit/f6ed65cd7bda9cb6009c6a12efd7c4311df31936.patch"
   "https://github.com/zen-kernel/zen-kernel/commit/cab7ea1a4ef6685a133ae121ca27098b9dd31287.patch"
   "https://github.com/zen-kernel/zen-kernel/commit/fb5c79d96cc87e4778ac0f2a53bc7c0c23078c54.patch"
@@ -159,12 +154,7 @@ sha256sums=(
   '74db38cd3c353c295d2bd11159ccafc4396b8fb21735a536f5bb5ab71093a90f'
   'b7104fc9af642fa20e0a6cb8ab6dfba634132737948d5843dec76e7abd3a3530'
   '5ef2f14326a5fab8980d1ebb6734ece576f930c173b4980eb026513aa3b1b9d0'
-  'f70e73db763c96cc8c4715243025bb25ebf68d7f373065b8c5f3ee5bb041c3ae'
-  'b48dc111a5062313b087ab15a21163a184b336d2f8fd2429d626b6587a37b9e6'
-  'ac7c16114ba67fde473d13243075b045d838f16d7c4f2ea7b62d78521a3aff7f'
-  '6d9aa252af6bfe1c54e55ee7c5ef09c8850a2918f6b4fb847d1a223d2342d151'
-  'de0fb6f40fd3d8a5be18de085383ac0aed5d103495f1fe0d01d51ca68637b4d5'
-  '6725dfdeb050c49cb6dfbb068f5966c0368fba3da6630c759d2eecdff65abbce'
+  '68c6371b429db829fa1d6493b4f5cf978b68af30d38d1b4bea150eb8d7cf1939'
   'bc647f73ec860a0fe7d074c2377588816a616dc2a651b30d7b9cd168863a17c6'
   '5059762e54c8dbe4262d48eafb8d486a54244eec71da5d7b61fc0f5f1c5c2ea7'
   'f22c6983d496d9038fa0f4288ee6cbb5b46837fee5f644f4759e4c26dcdff262'
