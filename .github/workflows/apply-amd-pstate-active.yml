@@ -1,0 +1,154 @@
+name: Apply AMD P-State active default
+
+on:
+  push:
+    branches:
+      - agent/amd-pstate-active
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/amd-pstate-active
+          fetch-depth: 0
+
+      - name: Enable AMD P-State active and refresh checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import re
+          from pathlib import Path
+
+          config_path = Path("config-charcoal")
+          pkgbuild_path = Path("PKGBUILD")
+
+          config = config_path.read_text(encoding="utf-8")
+          config_lines = config.splitlines()
+          filtered = [
+              line
+              for line in config_lines
+              if not line.startswith("CONFIG_X86_AMD_PSTATE=")
+              and not line.startswith("CONFIG_X86_AMD_PSTATE_DEFAULT_MODE=")
+              and line != "# CONFIG_X86_AMD_PSTATE is not set"
+          ]
+
+          marker = "CONFIG_CPU_SUP_ZHAOXIN=n"
+          try:
+              marker_index = filtered.index(marker)
+          except ValueError as exc:
+              raise SystemExit(f"Could not locate insertion marker in {config_path}") from exc
+
+          block = [
+              "",
+              "# Enable AMD P-State active (EPP) mode by default",
+              "CONFIG_X86_AMD_PSTATE=y",
+              "CONFIG_X86_AMD_PSTATE_DEFAULT_MODE=3",
+          ]
+          filtered[marker_index + 1:marker_index + 1] = block
+          new_config = "\n".join(filtered) + "\n"
+          config_path.write_text(new_config, encoding="utf-8")
+
+          digest = hashlib.sha256(new_config.encode("utf-8")).hexdigest()
+
+          pkgbuild = pkgbuild_path.read_text(encoding="utf-8")
+
+          source_match = re.search(r"(?ms)^source=\(\n(.*?)^\)\nsha256sums=\(", pkgbuild)
+          if not source_match:
+              raise SystemExit("Could not parse PKGBUILD source array")
+
+          source_entries: list[str] = []
+          for raw_line in source_match.group(1).splitlines():
+              value = raw_line.split("#", 1)[0].strip()
+              if not value:
+                  continue
+              if value[0] in "\"'" and value[-1] == value[0]:
+                  value = value[1:-1]
+              source_entries.append(value)
+
+          try:
+              config_index = source_entries.index("config-charcoal")
+          except ValueError as exc:
+              raise SystemExit("config-charcoal is missing from PKGBUILD source array") from exc
+
+          sums_match = re.search(r"(?ms)^sha256sums=\(\n(.*?)^\)\n", pkgbuild)
+          if not sums_match:
+              raise SystemExit("Could not parse PKGBUILD sha256sums array")
+
+          sums_body = sums_match.group(1)
+          sum_matches = list(re.finditer(r"(?m)^(\s*)'([^']+)'(\s*)$", sums_body))
+          if len(sum_matches) != len(source_entries):
+              raise SystemExit(
+                  f"source/checksum count mismatch: {len(source_entries)} sources, "
+                  f"{len(sum_matches)} checksums"
+              )
+          if config_index >= len(sum_matches):
+              raise SystemExit("config-charcoal checksum index is out of range")
+
+          target = sum_matches[config_index]
+          old_digest = target.group(2)
+          if old_digest != "SKIP" and not re.fullmatch(r"[0-9a-f]{64}", old_digest):
+              raise SystemExit(f"Unexpected existing config-charcoal checksum: {old_digest}")
+
+          replacement = f"{target.group(1)}'{digest}'{target.group(3)}"
+          new_sums_body = sums_body[:target.start()] + replacement + sums_body[target.end():]
+          new_pkgbuild = pkgbuild[:sums_match.start(1)] + new_sums_body + pkgbuild[sums_match.end(1):]
+          pkgbuild_path.write_text(new_pkgbuild, encoding="utf-8")
+
+          print(f"config-charcoal SHA-256: {digest}")
+          PY
+
+      - name: Validate configuration and PKGBUILD
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n PKGBUILD
+          python3 <<'PY'
+          import hashlib
+          import re
+          from pathlib import Path
+
+          config = Path("config-charcoal").read_text(encoding="utf-8")
+          assert config.count("CONFIG_X86_AMD_PSTATE=y") == 1
+          assert config.count("CONFIG_X86_AMD_PSTATE_DEFAULT_MODE=3") == 1
+          assert "# CONFIG_X86_AMD_PSTATE is not set" not in config
+          digest = hashlib.sha256(config.encode("utf-8")).hexdigest()
+
+          pkgbuild = Path("PKGBUILD").read_text(encoding="utf-8")
+          source_body = re.search(r"(?ms)^source=\(\n(.*?)^\)\nsha256sums=\(", pkgbuild).group(1)
+          sources = []
+          for raw_line in source_body.splitlines():
+              value = raw_line.split("#", 1)[0].strip()
+              if not value:
+                  continue
+              if value[0] in "\"'" and value[-1] == value[0]:
+                  value = value[1:-1]
+              sources.append(value)
+
+          sums_body = re.search(r"(?ms)^sha256sums=\(\n(.*?)^\)\n", pkgbuild).group(1)
+          sums = re.findall(r"(?m)^\s*'([^']+)'\s*$", sums_body)
+          assert len(sources) == len(sums)
+          assert sums[sources.index("config-charcoal")] == digest
+          print(f"Validated config-charcoal SHA-256: {digest}")
+          PY
+
+      - name: Commit the validated change
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-amd-pstate-active.yml
+          git add config-charcoal PKGBUILD
+          git diff --cached --check
+          git commit -m "Enable AMD P-State active by default"
+          git push origin HEAD:agent/amd-pstate-active
