@@ -22,7 +22,7 @@ jobs:
           git clone --depth 1 --branch 6.16.12-valve27 --filter=blob:none --sparse \
             https://github.com/evlaV/linux-integration.git kernel-source
           cd kernel-source
-          git sparse-checkout set \
+          git sparse-checkout set --no-cone \
             include/linux/sched.h \
             init/Kconfig \
             kernel/Kconfig.hz \
