@@ -2,7 +2,7 @@
 """Adapt the reviewed POC 2.6.1r2 patch to the Valve 6.16 sched.h layout.
 
 The upstream 6.18.3 patch inserts rq::poc_idle_committed using context that is
-changed by the BORE port.  All other POC hunks apply cleanly.  This adapter
+changed by the BORE port. All other POC hunks apply cleanly. This adapter
 removes only that upstream hunk and inserts the identical field at the unique
 Valve/BORE anchor before the remaining patch is applied.
 """
@@ -33,6 +33,14 @@ class PortError(RuntimeError):
     pass
 
 
+def sched_section(text: str) -> str:
+    start = text.find(SECTION_HEADER)
+    if start < 0:
+        raise PortError("POC patch does not contain kernel/sched/sched.h")
+    end = text.find("\ndiff --git ", start + len(SECTION_HEADER))
+    return text[start : len(text) if end < 0 else end]
+
+
 def adapt_patch(text: str) -> str:
     section = text.find(SECTION_HEADER)
     if section < 0:
@@ -59,8 +67,9 @@ def adapt_patch(text: str) -> str:
         raise PortError("unexpected rq::poc_idle_committed hunk structure")
 
     adapted = text[:hunk] + text[next_hunk:]
-    if "poc_idle_committed" in adapted:
-        raise PortError("poc_idle_committed remains in the adapted patch")
+    adapted_sched = sched_section(adapted)
+    if HUNK_HEADER in adapted_sched or EXPECTED_ADDITIONS in adapted_sched:
+        raise PortError("rq::poc_idle_committed hunk remains in sched.h")
     return adapted
 
 
