@@ -36,16 +36,21 @@ patches usados.
 | [LRU Marie](https://github.com/firelzrd/lru_marie) | Habilita o caminho de recuperação de memória LRU Marie (`CONFIG_LRU_MARIE=y`). |
 | [zram-ir](https://github.com/firelzrd/zram-ir) | Adiciona o controle de recompressão imediata do zram por meio de `vm.zram_recomp_immediate`. Um *drop-in* do `zram-generator` incluído substitui a configuração primária `zstd` do SteamOS antes da inicialização de `zram0`: LZ4 é o compressor primário e ZSTD é a recompressão de prioridade `1`. Um `ExecStartPre` de `systemd-zram-setup@` executa a mesma configuração antes de `disksize`, tornando o comportamento determinístico mesmo se uma versão antiga do generator não configurar algoritmos secundários. O helper udev reafirma o sysctl e fornece um fallback seguro; ele nunca redefine um dispositivo inicializado ou swap ativo e não cria um dispositivo zram adicional. |
 | [ADIOS](https://github.com/firelzrd/adios) | Adiciona o escalonador Adaptive Deadline I/O Scheduler e o torna o escalonador MQ de I/O padrão. A regra udev instalada também seleciona `adios` para dispositivos de bloco compatíveis, exceto dispositivos loop e zram. |
-| [Infinity Scheduler v4.6-gpu](https://github.com/galpt/infinity-scheduler/tree/v4.6-gpu/patches/arch/7.1) | Aplica a série completa `0001`–`0006`: estado-base, comportamento CFS/EEVDF, escalonamento de tempo real e escalonamento virtual de GPU DRM. |
+| [BORE Scheduler 6.8.0-rc1](https://github.com/firelzrd/bore-scheduler/tree/main/patches/testing) | Habilita o escalonador de CPU Burst-Oriented Response Enhancer (`CONFIG_SCHED_BORE=y`) por meio do porte revisado para o Valve 6.16.12 do patch BORE 6.18 oficial mais recente. |
+| [Correção de coexistência BORE sched_ext](https://github.com/firelzrd/bore-scheduler/tree/main/patches/additions) | Aplica o upstream `0002-sched-ext-coexistence-fix.patch` após o BORE. O porte local do Valve preserva o helper e acrescenta o protótipo interno exigido pela compilação estrita, sem usar fuzz. |
 | [POC Selector](https://github.com/firelzrd/poc-selector) | Habilita a seleção de CPU ociosa por bitmap (`CONFIG_SCHED_POC_SELECTOR=y`) no caminho de ativação de tarefas. |
 | [Nap](https://github.com/firelzrd/nap) | Habilita o governador Neural Adaptive Predictor de CPU idle. O fragmento de configuração do Charcoal desabilita ladder, menu e teo e habilita o NAP. |
 
 Para componentes que possuem patch oficial compatível com 6.16, o resolvedor
 busca o patch upstream correspondente mais recente. Quando é necessário um
 porte aprovado para 6.16.12, a compilação usa o porte local do repositório e
-registra em `patch-lock.json` a fonte upstream mais nova que ele acompanha. A
-série Infinity é sempre acompanhada a partir da branch upstream `v4.6-gpu` e
-aplicada pelos portes locais aprovados para 6.16.12.
+registra em `patch-lock.json` a fonte upstream mais nova que ele acompanha. O
+BORE é acompanhado a partir dos diretórios de teste e estável Linux 6.18 de
+`firelzrd/bore-scheduler`, e a adição de coexistência com `sched_ext` é
+acompanhada no mesmo repositório. O resolvedor registra a fonte oficial atual
+e só aceita o porte local BORE quando seu SHA-256 coincide com o upstream
+revisado; um patch oficial novo interrompe a compilação até que o porte Valve
+seja atualizado e validado.
 
 ### Outras alterações incluídas
 

@@ -257,6 +257,12 @@ def upstream_candidates(
             compatibility = (
                 2 if series in path else 1 if "latest" in path.lower() else 0
             )
+        version_source = path
+        project_version_regex = component.get("project_version_regex")
+        if project_version_regex:
+            version_match = re.search(str(project_version_regex), path)
+            if version_match:
+                version_source = version_match.groupdict().get("version") or path
         raw = f"https://raw.githubusercontent.com/{repo}/{commit_sha}/{path}"
         candidates.append(
             Candidate(
@@ -265,7 +271,7 @@ def upstream_candidates(
                 raw,
                 compatibility,
                 path_kernel_version,
-                (compatibility,) + version_key(path),
+                (compatibility,) + version_key(version_source),
             )
         )
     return candidates
@@ -338,8 +344,19 @@ def resolve_component(
             raise ResolveError(
                 f"selected upstream patch for {component['name']} is not a patch"
             )
+        upstream_sha256 = hashlib.sha256(upstream_data).hexdigest()
+        expected_upstream_sha256 = component.get("local_port_upstream_sha256")
+        if (
+            expected_upstream_sha256
+            and upstream_sha256 != expected_upstream_sha256
+        ):
+            raise ResolveError(
+                f"local port for {component['name']} follows upstream SHA-256 "
+                f"{expected_upstream_sha256}, but the current official selection "
+                f"has SHA-256 {upstream_sha256}; refresh and validate the port"
+            )
         upstream |= {
-            "sha256": hashlib.sha256(upstream_data).hexdigest(),
+            "sha256": upstream_sha256,
             "size": len(upstream_data),
         }
         return {
@@ -382,12 +399,8 @@ def replace_source_entries(text: str, replacements: dict[str, str]) -> str:
         "lru_marie": r"(?m)^\s*6\.\d+(?:\.\d+)?-lru_marie-[^\s]+\.patch\s*$",
         "zram_ir": r"(?m)^\s*0001-linux[^\s]*-zram-ir-[^\s]+\.patch\s*$",
         "adios": r"(?m)^\s*6\.\d+(?:\.\d+)?-ADIOS-[^\s]+\.patch\s*$",
-        "infinity_core": r"(?m)^\s*6\.16\.12-infinity-0001[^\s]*\.patch\s*$",
-        "infinity_cpu": r"(?m)^\s*6\.16\.12-infinity-0002[^\s]*\.patch\s*$",
-        "infinity_rt": r"(?m)^\s*6\.16\.12-infinity-0003[^\s]*\.patch\s*$",
-        "infinity_gpu_headers": r"(?m)^\s*6\.16\.12-infinity-0004[^\s]*\.patch\s*$",
-        "infinity_gpu_vtime": r"(?m)^\s*6\.16\.12-infinity-0005[^\s]*\.patch\s*$",
-        "infinity_gpu_cleanup": r"(?m)^\s*6\.16\.12-infinity-0006[^\s]*\.patch\s*$",
+        "bore": r"(?m)^\s*(?:6\.16\.12-bore-[0-9][^\s]*|latest-bore\.patch)\s*$",
+        "bore_sched_ext_coexistence": r"(?m)^\s*(?:6\.16\.12-bore-sched-ext-coexistence-fix\.patch|latest-bore-sched-ext-coexistence-fix\.patch)\s*$",
         "poc_selector": r"(?m)^\s*6\.\d+(?:\.\d+)?-poc-selector-[^\s]+\.patch\s*$",
         "nap": r"(?m)^\s*6\.\d+(?:\.\d+)?-nap-v?[^\s]+\.patch\s*$",
     }

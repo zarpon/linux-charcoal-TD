@@ -82,13 +82,9 @@ jobs:
           grep -Fq 'latest-zram-ir.patch' PKGBUILD
           grep -Fq 'latest-poc-selector.patch' PKGBUILD
           grep -Fq 'latest-nap.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0001.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0002.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0003.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0004.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0005.patch' PKGBUILD
-          grep -Fq 'latest-infinity-0006.patch' PKGBUILD
-          ! grep -Fq 'latest-bore.patch' PKGBUILD
+          grep -Fq 'latest-bore.patch' PKGBUILD
+          grep -Fq 'latest-bore-sched-ext-coexistence-fix.patch' PKGBUILD
+          ! grep -Fqi 'infinity' PKGBUILD
           ! grep -Fq 'drm_sched_rr_default.patch' PKGBUILD
           python3 - <<'PY'
           import json
@@ -101,12 +97,8 @@ jobs:
               "lru_marie": "firelzrd/lru_marie",
               "zram_ir": "firelzrd/zram-ir",
               "adios": "firelzrd/adios",
-              "infinity_core": "galpt/infinity-scheduler",
-              "infinity_cpu": "galpt/infinity-scheduler",
-              "infinity_rt": "galpt/infinity-scheduler",
-              "infinity_gpu_headers": "galpt/infinity-scheduler",
-              "infinity_gpu_vtime": "galpt/infinity-scheduler",
-              "infinity_gpu_cleanup": "galpt/infinity-scheduler",
+              "bore": "firelzrd/bore-scheduler",
+              "bore_sched_ext_coexistence": "firelzrd/bore-scheduler",
               "poc_selector": "firelzrd/poc-selector",
               "nap": "firelzrd/nap",
           }
@@ -129,17 +121,15 @@ jobs:
                   assert re.fullmatch(r"[0-9a-f]{64}", upstream["sha256"])
                   assert upstream["size"] > 0
 
-          for name in (
-              "infinity_core",
-              "infinity_cpu",
-              "infinity_rt",
-              "infinity_gpu_headers",
-              "infinity_gpu_vtime",
-              "infinity_gpu_cleanup",
-          ):
-              item = lock["components"][name]
-              assert item["origin"] == "local-port"
-              assert item["selection"] == "latest-upstream-port"
+          bore = lock["components"]["bore"]
+          assert bore["origin"] == "local-port"
+          assert bore["selection"] == "latest-upstream-port"
+          assert bore["upstream"]["path"] == "patches/testing/0001-linux6.18.22-bore-6.8.0-rc1.patch"
+          assert bore["upstream"]["sha256"] == "356f9b2935e3ca79c3bcfa87d8630b6fec3fb731049c81cc7086fbbaa58f5e60"
+
+          bore_sched_ext = lock["components"]["bore_sched_ext_coexistence"]
+          assert bore_sched_ext["origin"] == "local-port"
+          assert bore_sched_ext["selection"] == "latest-upstream-port"
 
           assert lock["components"]["adios"]["selection"] in {
               "upstream-compatible", "nearest-upstream-port"

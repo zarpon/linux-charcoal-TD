@@ -35,16 +35,20 @@ SHA-256 values.
 | [LRU Marie](https://github.com/firelzrd/lru_marie) | Enables the LRU Marie memory-reclaim path (`CONFIG_LRU_MARIE=y`). |
 | [zram-ir](https://github.com/firelzrd/zram-ir) | Adds immediate zram recompression control through `vm.zram_recomp_immediate`. A packaged `zram-generator` drop-in overrides the SteamOS `zstd` primary setting before `zram0` is initialized: LZ4 is the primary compressor and ZSTD is recompression priority `1`. A `systemd-zram-setup@` `ExecStartPre` runs the same setup before `disksize`, making the configuration deterministic even if an older generator does not configure secondary algorithms. The udev helper reasserts the sysctl and provides a safe fallback; it never resets an initialized device or active swap and does not create an additional zram swap device. |
 | [ADIOS](https://github.com/firelzrd/adios) | Adds the Adaptive Deadline I/O Scheduler and makes it the default MQ I/O scheduler. The packaged udev rule also selects `adios` for supported block devices, excluding loop and zram devices. |
-| [Infinity Scheduler v4.6-gpu](https://github.com/galpt/infinity-scheduler/tree/v4.6-gpu/patches/arch/7.1) | Applies the complete `0001`–`0006` series: core state, CFS/EEVDF behavior, real-time scheduling, and DRM GPU virtual-time scheduling changes. |
+| [BORE Scheduler 6.8.0-rc1](https://github.com/firelzrd/bore-scheduler/tree/main/patches/testing) | Enables the Burst-Oriented Response Enhancer CPU scheduler (`CONFIG_SCHED_BORE=y`) through the reviewed 6.16.12 Valve port of the latest official BORE 6.18 patch. |
+| [BORE sched_ext coexistence fix](https://github.com/firelzrd/bore-scheduler/tree/main/patches/additions) | Applies the upstream `0002-sched-ext-coexistence-fix.patch` after BORE. The local Valve port keeps the same helper and adds its required internal prototype, so strict builds compile without fuzz. |
 | [POC Selector](https://github.com/firelzrd/poc-selector) | Enables bitmap-based idle-CPU selection (`CONFIG_SCHED_POC_SELECTOR=y`) for the task wake-up path. |
 | [Nap](https://github.com/firelzrd/nap) | Enables the Neural Adaptive Predictor CPU-idle governor. The Charcoal fragment disables the ladder, menu, and teo governors and enables NAP. |
 
 For components with an official 6.16-compatible patch, the resolver fetches
 the newest matching upstream patch. When an approved 6.16.12 port is required,
 the build uses the repository's local port while recording the newer upstream
-source it follows in `patch-lock.json`. The Infinity series is always tracked
-from its upstream `v4.6-gpu` branch and applied through the approved local
-6.16.12 ports.
+source it follows in `patch-lock.json`. BORE is tracked from
+`firelzrd/bore-scheduler`'s testing and stable Linux 6.18 directories, and
+its `sched_ext` coexistence addition is tracked from the same repository.
+The resolver records the current official source and accepts a local BORE port
+only when it matches the reviewed upstream SHA-256; a newer official patch
+therefore stops the build until its Valve port is refreshed and validated.
 
 ### Other Included Changes
 
