@@ -1,4 +1,4 @@
-name: Export BORE port source
+name: Export full Valve kernel source
 
 on:
   pull_request:
@@ -11,70 +11,38 @@ permissions:
 jobs:
   export-source:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Check out project
         uses: actions/checkout@v4
 
-      - name: Fetch target kernel scheduler files
+      - name: Fetch complete target kernel source
         run: |
           set -Eeuo pipefail
-          git clone --depth 1 --branch 6.16.12-valve27 --filter=blob:none --sparse \
+          git clone --depth 1 --branch 6.16.12-valve27 \
             https://github.com/evlaV/linux-integration.git kernel-source
-          cd kernel-source
-          git sparse-checkout set --no-cone \
-            include/linux/sched.h \
-            init/Kconfig \
-            kernel/Kconfig.hz \
-            kernel/exit.c \
-            kernel/fork.c \
-            kernel/futex/waitwake.c \
-            kernel/sched/Makefile \
-            kernel/sched/core.c \
-            kernel/sched/debug.c \
-            kernel/sched/fair.c \
-            kernel/sched/sched.h
-          git checkout 6.16.12-valve27
-          git rev-parse HEAD > ../kernel-source-commit.txt
+          git -C kernel-source rev-parse HEAD > kernel-source-commit.txt
 
-      - name: Fetch current and historical BORE patches
+      - name: Package complete source and project snapshot
         run: |
           set -Eeuo pipefail
-          git clone https://github.com/firelzrd/bore-scheduler.git bore-upstream
-          cp bore-upstream/patches/stable/linux-6.18-bore/0001-linux6.18.22-bore-6.6.3.patch \
-            bore-6.18.22-6.6.3.patch
-          git -C bore-upstream show \
-            1921b881b4c7c859514a1dbab93af8035fd4e245:patches/stable/linux-6.16-bore/0001-linux6.16.0-bore-6.5.5.patch \
-            > bore-6.16.0-6.5.5-reference.patch
-          git -C bore-upstream rev-parse HEAD > bore-upstream-commit.txt
-          sha256sum bore-*.patch > bore-patches.sha256
+          tar --exclude=.git -C kernel-source -I 'zstd -10 -T0' \
+            -cf valve-linux-6.16.12-valve27.tar.zst .
+          git archive --format=tar HEAD | zstd -10 -T0 \
+            -o linux-charcoal-vulcano-validation.tar.zst
+          sha256sum valve-linux-6.16.12-valve27.tar.zst \
+            linux-charcoal-vulcano-validation.tar.zst \
+            > source-archives.sha256
 
-      - name: Package validation inputs
-        run: |
-          set -Eeuo pipefail
-          tar -C kernel-source -czf bore-port-source.tar.gz \
-            include/linux/sched.h \
-            init/Kconfig \
-            kernel/Kconfig.hz \
-            kernel/exit.c \
-            kernel/fork.c \
-            kernel/futex/waitwake.c \
-            kernel/sched/Makefile \
-            kernel/sched/core.c \
-            kernel/sched/debug.c \
-            kernel/sched/fair.c \
-            kernel/sched/sched.h
-
-      - name: Upload source artifact
+      - name: Upload full source artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bore-port-inputs-6.16.12-valve27
+          name: valve-linux-6.16.12-full-source
           path: |
-            bore-port-source.tar.gz
+            valve-linux-6.16.12-valve27.tar.zst
+            linux-charcoal-vulcano-validation.tar.zst
             kernel-source-commit.txt
-            bore-6.18.22-6.6.3.patch
-            bore-6.16.0-6.5.5-reference.patch
-            bore-upstream-commit.txt
-            bore-patches.sha256
+            source-archives.sha256
+          compression-level: 0
           retention-days: 1
           if-no-files-found: error
