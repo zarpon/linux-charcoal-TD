@@ -172,6 +172,21 @@ O resolvedor grava os arquivos `latest-*.patch` selecionados, atualiza o
 antes de distribuir uma compilação local. O workflow do GitHub realiza a mesma
 resolução e validação de checksums antes de empacotar uma release.
 
+## Compilação manual pelo GitHub
+
+Para gerar uma compilação nova a partir do conjunto atual de patches, sem
+alterar o repositório, abra [Build latest SteamOS Charcoal kernel](https://github.com/zarpon/linux-charcoal-vulcano/actions/workflows/push.yml), clique em **Run workflow** e selecione `master`.
+
+- Mantenha **Publish the compiled packages as a GitHub release** ativado para
+  publicar uma release normal para download depois que todas as validações
+  passarem.
+- Desative essa opção para apenas validar a compilação. Os pacotes e o lock de
+  patches ficarão disponíveis como artefatos do workflow por 14 dias; nenhuma
+  release será criada.
+
+Cada execução manual resolve primeiro os patches upstream compatíveis mais
+recentes e registra seus commits e SHA-256 exatos em `patch-lock.json`.
+
 Também é possível compilar diretamente em um sistema baseado em Arch. As
 dependências incluem `llvm`, `clang`, `lld`, `polly`, `bc`, `cpio`,
 `pahole`, `python`, `git` e `openssh`; consulte o `PKGBUILD` para a

@@ -168,6 +168,19 @@ The resolver writes the selected `latest-*.patch` files, updates
 changes before distributing a local build. The GitHub workflow performs the
 same resolution and checksum validation before packaging a release.
 
+## Manual GitHub Build
+
+To create a fresh build from the current patch set without changing the
+repository, open [Build latest SteamOS Charcoal kernel](https://github.com/zarpon/linux-charcoal-vulcano/actions/workflows/push.yml), click **Run workflow**, and select `master`.
+
+- Keep **Publish the compiled packages as a GitHub release** enabled to create
+  a normal downloadable release after all checks pass.
+- Disable it to validate a build only. The packages and patch lock are then
+  available as workflow artifacts for 14 days; no GitHub release is created.
+
+Every manual run resolves the newest compatible upstream patches first and
+records their exact commits and SHA-256 values in `patch-lock.json`.
+
 You can also build directly on an Arch-based system. Required dependencies
 include `llvm`, `clang`, `lld`, `polly`, `bc`, `cpio`, `pahole`,
 `python`, `git`, and `openssh`; see `PKGBUILD` for the complete list.
